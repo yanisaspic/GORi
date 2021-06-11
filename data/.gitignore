@@ -1,0 +1,10 @@
+### The data files used by GORi are downloaded in this folder. ###
+
+# Ontologies and Annotations
+*.gaf
+*.obo
+
+# Working files
+*.txt
+*.json
+*.csv
