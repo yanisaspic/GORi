@@ -5,7 +5,7 @@ Gene HPO annotations parser and loader.
 @ Asloudj Yanis
 """
 
-from scripts import common as cmn
+from _scripts import common as cmn
 
 HPO_ANNO_FIELDS = [
     'Gene_ID',

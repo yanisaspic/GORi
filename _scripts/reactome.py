@@ -5,7 +5,7 @@ Functions called to create a Reactome Ontology.
 @ Asloudj Yanis
 """
 
-from scripts import common as cmn
+from _scripts import common as cmn
 
 REAC_ANNO_FIELDS = [
     "DB_Object_ID",

@@ -19,10 +19,8 @@ https://owlcollab.github.io/oboformat/doc/GO.format.obo-1_2.html
 from goatools import obo_parser, associations
 from Bio.UniProt.GOA import gafiterator
 from settings import *
-from scripts import ontology as onto
-from scripts import common as cmn
-from scripts import reactome as rc
-from scripts import hpo
+from collections import OrderedDict
+from _scripts import ontology as onto, common as cmn, reactome as rc, hpo
 
 
 import time as tm
@@ -65,9 +63,10 @@ with open(gaf_file, 'rt') as gaf:
         except KeyError:
             gene_go_annotation[anno['DB_Object_ID']] = set([anno['GO_ID']])
 gene_symbol_id_dict = dict((x, y) for x, y in gene_symbol_id)
+species_genes = set(gene_go_annotation.keys())
 
 ## GO ONTOLOGY
-go_onto = obo_parser.GODag(go_obo_file, optional_attrs = "relationship")
+# go_onto = obo_parser.GODag(go_obo_file, optional_attrs = "relationship")
 
 ## REACTOME ANNOTATIONS
 gene_reactome_annotation = rc.load_reactome_annotation(reactome_annotation_file)
@@ -76,25 +75,35 @@ gene_reactome_annotation = rc.load_reactome_annotation(reactome_annotation_file)
 reacterm = rc.load_reacterm_dict(reactome_hierarchy_file, reactome_label_file)
 onto.save_as_obo(reacterm, reactome_obo_file, "ontology: reactome")
 react_onto = obo_parser.GODag(reactome_obo_file)
-species_genes = set(gene_go_annotation.keys())
 species_genes.update(set(gene_reactome_annotation.keys()))
 
-if species == "human":    
-    ## HPO ANNOTATIONS
+## HPO ANNOTATIONS
+if species == "human":
+
     gene_hpo_annotation = hpo.load_hpo_annotation(hpo_annotation_file)
-    gene_uniprotkb_hpo_annotation = []
-    # replace gene symbols by their UniProtKB IDs
+    gene_uniprot_hpo_annotation = {}
+    gene_symbol_hpo_annotation = OrderedDict()
+    
+    # Try to replace the gene symbols by their UniProtKB IDs according to the GAF file
     for symbol in gene_hpo_annotation.keys():
         try:
-            uniprotkb_id = gene_symbol_id_dict[symbol]
-            gene_uniprotkb_hpo_annotation.append((uniprotkb_id, gene_hpo_annotation[symbol]))
+            uniprot_id = gene_symbol_id_dict[symbol]
+            gene_uniprot_hpo_annotation[uniprot_id] = gene_hpo_annotation[symbol]
+        
+        # if a corresponding id is not found from the GAF file, save the symbols and their values
         except KeyError:
-            pass
-    gene_hpo_annotation = dict((x, y) for x, y in gene_uniprotkb_hpo_annotation)
+            gene_symbol_hpo_annotation[symbol] = gene_hpo_annotation[symbol]
+    
+    # query UniProtKB to find the corresponding ids
+    ################################################
+    #  query to replace the dictionnary keys here  #
+    ################################################
+    gene_hpo_annotation = gene_uniprot_hpo_annotation.update(gene_symbol_hpo_annotation)
+
     species_genes.update(set(gene_hpo_annotation.keys()))
 
 ## HPO ONTOLOGY
-hpo_onto = obo_parser.GODag(hpo_obo_file)
+# hpo_onto = obo_parser.GODag(hpo_obo_file)
 
 # get the GO, Reactome (and if species == human, HPO) leaf nodes corresponding to each gene.
 rdy2use_data = {}
