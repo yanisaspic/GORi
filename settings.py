@@ -14,7 +14,7 @@ test_genes2 = test_genes2.split(",")
 # the species of interest:
 species = "human"
 # the GO terms aspect of interest:
-aspect = "biological_process"
+aspect = ["biological_process"]
 # ontologies to use:
 target_onto = ["Gene Ontology", "Reactome", "Human Phenotype Ontology"]
 # the genes of interest:

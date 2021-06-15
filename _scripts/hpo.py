@@ -28,7 +28,7 @@ def load_hpo_annotation(anno_path):
     ``anno_path`` (string): path leading to the HPO annotation file.
 
     # Usage
-    >>> anno = load_hpo_annotation("data/raw/hpo_annotation.txt")
+    >>> anno = load_hpo_annotation("data/hpo_annotation.txt")
     >>> print(len(anno['IGF1R'])) 
     ... 53
     """

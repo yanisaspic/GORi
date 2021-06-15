@@ -62,11 +62,11 @@ with open(gaf_file, 'rt') as gaf:
             gene_go_annotation[anno['DB_Object_ID']].add(anno['GO_ID'])
         except KeyError:
             gene_go_annotation[anno['DB_Object_ID']] = set([anno['GO_ID']])
-gene_symbol_id_dict = dict((x, y) for x, y in gene_symbol_id)
+gaf_symbol_id_dict = dict((x, y) for x, y in gene_symbol_id)
 species_genes = set(gene_go_annotation.keys())
 
 ## GO ONTOLOGY
-# go_onto = obo_parser.GODag(go_obo_file, optional_attrs = "relationship")
+go_onto = obo_parser.GODag(go_obo_file)
 
 ## REACTOME ANNOTATIONS
 gene_reactome_annotation = rc.load_reactome_annotation(reactome_annotation_file)
@@ -80,78 +80,81 @@ species_genes.update(set(gene_reactome_annotation.keys()))
 ## HPO ANNOTATIONS
 if species == "human":
 
-    gene_hpo_annotation = hpo.load_hpo_annotation(hpo_annotation_file)
-    gene_uniprot_hpo_annotation = {}
-    gene_symbol_hpo_annotation = OrderedDict()
+    gene_hpo_symbol_annotation = hpo.load_hpo_annotation(hpo_annotation_file)
+    gene_hpo_annotation = {}
+    gene_symbol_hpo = set()
     
     # Try to replace the gene symbols by their UniProtKB IDs according to the GAF file
     for symbol in gene_hpo_annotation.keys():
         try:
-            uniprot_id = gene_symbol_id_dict[symbol]
-            gene_uniprot_hpo_annotation[uniprot_id] = gene_hpo_annotation[symbol]
+            uniprot_id = gaf_symbol_id_dict[symbol]
+            gene_hpo_annotation[uniprot_id] = gene_hpo_symbol_annotation[symbol]
         
         # if a corresponding id is not found from the GAF file, save the symbols and their values
         except KeyError:
-            gene_symbol_hpo_annotation[symbol] = gene_hpo_annotation[symbol]
+            gene_symbol_hpo.add(symbol)
     
     # query UniProtKB to find the corresponding ids
     ################################################
-    #  query to replace the dictionnary keys here  #
+
+    # hpo_symbol_id_dict = query(gene_symbol_hpo)
+    # for k in gene_id_hpo:
+
     ################################################
-    gene_hpo_annotation = gene_uniprot_hpo_annotation.update(gene_symbol_hpo_annotation)
 
     species_genes.update(set(gene_hpo_annotation.keys()))
 
 ## HPO ONTOLOGY
-# hpo_onto = obo_parser.GODag(hpo_obo_file)
+hpo_onto = obo_parser.GODag(hpo_obo_file)
 
-# get the GO, Reactome (and if species == human, HPO) leaf nodes corresponding to each gene.
+## save all the ontologies
+ontologies = {
+    'GO': go_onto, 
+    'R-': react_onto
+    }
+if species == "human":
+    ontologies['HP'] = hpo_onto
+
+# get the GO, Reactome (and HPO if species == human) leaf nodes corresponding to each gene.
 rdy2use_data = {}
+
+annotations = [gene_go_annotation, gene_reactome_annotation]
+if species == "human":
+    annotations.append(gene_hpo_annotation)
+
 for gene_id in species_genes:
 
     # count the annotation sources for this gene:
     n_onto = 0
+    gene_terms_for_mult_onto = []
 
-    try:
-        gene_leaf_goid = gene_go_annotation[gene_id]
-        gene_aspect_leaf_goid = set()
-        gene_aspect_goid = set()
-        for goid in gene_leaf_goid:
-            if go_onto[goid].namespace == aspect:
-                gene_aspect_leaf_goid.add(goid)
-                # gene_aspect_goid.update(go_onto[goid].get_all_upper())
-        ancestry_goid = onto.get_ancestry_id(gene_id, gene_go_annotation, go_onto)
-        ## If the entire tree is added to the JSON file
-        # gene_goid = list(gene_aspect_goid)
-        ## If only the leaves are added to the JSON file
-        gene_goid = list(gene_aspect_leaf_goid)
-        n_onto += 1
+    for anno_file in annotations:
+        gene_terms_for_one_onto = set()
 
-    except KeyError:
-        gene_goid = set()
-
-    try:
-        # ancestry_reactid = onto.get_ancestry_id(gene_id, gene_reactome_annotation, react_onto)
-        # gene_reactid = list(ancestry_reactid)
-        gene_reactid = list(gene_reactome_annotation[gene_id])
-        n_onto += 1
-    except KeyError:
-        gene_reactid = set()
-
-    if species == "human":
         try:
-            # ancestry_hpoid = onto.get_ancestry_id(gene_id, gene_hpo_annotation, hpo_onto)
-            # gene_hpoid = list(ancestry_hpoid)
-            gene_hpoid = list(gene_hpo_annotation[gene_id])
+            leaves_id = list(anno_file[gene_id])
+            source = onto.get_term_ontology(leaves_id[0], ontologies)
+            for leafid in leaves_id:
+                term = source[leafid]
+
+                # for the Gene Ontology, only keep the aspect of interests
+                if id(source) == id(ontologies['GO']):
+                    if term.namespace not in aspect:
+                        continue
+                
+                # add the term and its parents
+                gene_terms_for_one_onto.add(leafid)
+                gene_terms_for_one_onto.update(term.get_all_parents())
             n_onto += 1
+
         except KeyError:
-            gene_hpoid = set()
-    
-    # if the gene can help find links between multiple ontologies, save the data
+            pass
+        gene_terms_for_mult_onto.append(gene_terms_for_one_onto)
+
     if n_onto > 1:
-        rdy2use_data[gene_id] = {'Gene Ontology': gene_goid, 'Reactome': gene_reactid}
+        rdy2use_data[gene_id] = {'Gene Ontology': gene_terms_for_mult_onto[0], 'Reactome': gene_terms_for_mult_onto[1]}
         if species == "human":
-            rdy2use_data[gene_id]['Human Phenotype Ontology'] = gene_hpoid
+            rdy2use_data[gene_id]['Human Phenotype Ontology'] = gene_terms_for_mult_onto[2]
 
 end_load = tm.time()
 
@@ -161,8 +164,10 @@ end_load = tm.time()
 cmn.save_as_json(rdy2use_data, "%s/%s_gene_annotation.json" % (data_path, species))
 with open("%s/%s_gene_symbol.csv" % (data_path, species), 'wt') as csv:
     csv.write("symbol,id\n")
-    for key in gene_symbol_id_dict.keys():
-        csv.write("%s,%s\n" % (key, gene_symbol_id_dict[key]))
+    for key in gaf_symbol_id_dict.keys():
+        csv.write("%s,%s\n" % (key, gaf_symbol_id_dict[key]))
+    # for key in hpo_symbol_id_dict.keys():
+        # csv.write("%s,%s\n" % (key, hpo_symbol_id_dict[key]))
 
 end_exp = tm.time()
 
