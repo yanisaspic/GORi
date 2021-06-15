@@ -20,7 +20,7 @@ from goatools import obo_parser, associations
 from Bio.UniProt.GOA import gafiterator
 from settings import *
 from collections import OrderedDict
-from _scripts import ontology as onto, common as cmn, reactome as rc, hpo
+from _scripts import ontology as onto, uniprot as up, common as cmn, reactome as rc, hpo
 
 
 import time as tm
@@ -88,21 +88,17 @@ if species == "human":
     for symbol in gene_hpo_annotation.keys():
         try:
             uniprot_id = gaf_symbol_id_dict[symbol]
+            print("OK")
             gene_hpo_annotation[uniprot_id] = gene_hpo_symbol_annotation[symbol]
         
         # if a corresponding id is not found from the GAF file, save the symbols and their values
         except KeyError:
+            print("not OK")
             gene_symbol_hpo.add(symbol)
-    
-    # query UniProtKB to find the corresponding ids
-    ################################################
 
-    # hpo_symbol_id_dict = query(gene_symbol_hpo)
-    # for k in gene_id_hpo:
-
-    ################################################
-
-    species_genes.update(set(gene_hpo_annotation.keys()))
+### query UniProtKB to find the corresponding ids ###
+hpo_symbol_id_dict = up.get_symbol_dict(gene_symbol_hpo, species=species)
+species_genes.update(set(gene_hpo_annotation.keys()))
 
 ## HPO ONTOLOGY
 hpo_onto = obo_parser.GODag(hpo_obo_file)
@@ -166,8 +162,8 @@ with open("%s/%s_gene_symbol.csv" % (data_path, species), 'wt') as csv:
     csv.write("symbol,id\n")
     for key in gaf_symbol_id_dict.keys():
         csv.write("%s,%s\n" % (key, gaf_symbol_id_dict[key]))
-    # for key in hpo_symbol_id_dict.keys():
-        # csv.write("%s,%s\n" % (key, hpo_symbol_id_dict[key]))
+    for key in hpo_symbol_id_dict.keys():
+        csv.write("%s,%s\n" % (key, hpo_symbol_id_dict[key]))
 
 end_exp = tm.time()
 

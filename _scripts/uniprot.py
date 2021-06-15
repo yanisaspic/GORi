@@ -6,15 +6,7 @@ Goal >  Translate a set of gene symbols to Uniprot IDs with Mygene, and put them
 """
 
 import mygene as mg
-import time as time
-
-#exemple ID Uniprot to use MyGene
-xli = ['A0A023GPK8','P08069','HJHKKK','P08069']
-#exemple symbols to use MyGene
-xlu = ['fred','IGF1R','IGF1R','EEF1AKNMT']
-
-
-begin = time.time()
+import time
 
 def get_genes(x):
     with open(x,'r') as f:
@@ -26,8 +18,7 @@ def get_genes(x):
         del genes[0]
     return set(genes)
 
-
-def translation(liste, input, output, species = 'human'):
+def translation(liste, input, output, species):
     out = mg.MyGeneInfo().querymany(liste, scopes = input, fields = output, species = species)
     return out
 
@@ -47,8 +38,7 @@ def writing(liste, retour):
             
     return dico
 
-end = time.time()
-
-print(writing(translation("""set of genes""",'symbol','uniprot'),'uniprot'))
-
-print(f"total time = {end - begin}s")
+def get_symbol_dict(liste, input = 'symbol', output = 'uniprot', species = 'human'):
+    out = translation(liste, input, output, species)
+    print(out)
+    return writing(out, output)

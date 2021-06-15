@@ -25,7 +25,6 @@ symbol = True
 ## data relative path:
 data_path = "./data"
 
-
 ## URLs to download data files from and their respective resulting files:
 # gaf file is downloaded automatically by a function call.
 gaf_file = "%s/goa_%s.gaf" % (data_path, species)
