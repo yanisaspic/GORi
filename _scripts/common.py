@@ -9,6 +9,7 @@ import json
 import requests
 import os
 import shutil
+import csv
 
 def download_url(url, save_path, chunk_size=128):
     """
@@ -150,3 +151,14 @@ def record_iterator(handle, fields):
     for inline in handle:
         inrec = inline.rstrip("\n").split("\t")
         yield dict(zip(fields, inrec))
+       
+    
+    def fichier_de_base(x):
+        with open(x,'r') as f:
+            genes = []
+            read = csv.reader(f)
+            for i in read : 
+                bop = " ".join(i)
+                genes.append(bop)
+            del genes[0]
+        return set(genes)
