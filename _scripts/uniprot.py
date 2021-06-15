@@ -16,9 +16,18 @@ xlu = ['fred','IGF1R','IGF1R','EEF1AKNMT']
 
 begin = time.time()
 
+def get_genes(x):
+    with open(x,'r') as f:
+        genes = []
+        read = csv.reader(f)
+        for i in read : 
+            bop = " ".join(i)
+            genes.append(bop)
+        del genes[0]
+    return set(genes)
+
 
 def translation(liste, input, output, species = 'human'):
-
     out = mg.MyGeneInfo().querymany(liste, scopes = input, fields = output, species = species)
     return out
 

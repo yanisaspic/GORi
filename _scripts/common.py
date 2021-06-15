@@ -151,14 +151,3 @@ def record_iterator(handle, fields):
     for inline in handle:
         inrec = inline.rstrip("\n").split("\t")
         yield dict(zip(fields, inrec))
-       
-    
-def get_genes(x):
-    with open(x,'r') as f:
-        genes = []
-        read = csv.reader(f)
-        for i in read : 
-            bop = " ".join(i)
-            genes.append(bop)
-        del genes[0]
-    return set(genes)

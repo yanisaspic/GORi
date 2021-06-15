@@ -346,4 +346,3 @@ def mine_association_rules(trans_db, weight_items, min_item_freq = 0.1, min_item
     freq_items = filter_frequency(freq_items, min_item_freq)
     tree, item_nodes = construct_fptree(trans_db, freq_items, weight_items)
     return get_association_rules(tree, item_nodes, freq_items, min_item_weight, min_pattern_conf)
-
