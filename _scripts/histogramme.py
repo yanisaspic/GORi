@@ -21,8 +21,8 @@ def histogram(ax, list, titre):
     Return a Histogram from a list of data, with its Mean, its Median and its Standard Deviation
 
     # Arguments
-    ``ax`` (axes object):   subplot return a tuple containing a figure for an image file (fig) and axes objects (ax). 
-                            We use only the axe object create the graph, to modify the X and Y axis, the title ...
+    ``ax`` (axes object):   plt.subplot return a tuple containing a figure for an image file (fig) and axes objects (ax). 
+                            We use only the axe object to create the graph, to modify the X and Y axis, the title ...
     ``list`` (list, set, array...): data used to create the histogram 
     ``titre`` (str): Title of the graph
 
@@ -53,6 +53,7 @@ def histogram(ax, list, titre):
     ax.hist(x = list, bins = 10, color='#0504aa', alpha=0.5, rwidth=0.50)
     ax.text(0.05,0.95, text, transform=ax.transAxes, fontsize=10,verticalalignment='top', bbox=props)
 
+#example of an application
 fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2,ncols=2)
 histogram(ax1, test, 'oui')
 histogram(ax2, test2, 'non')
