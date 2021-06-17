@@ -119,7 +119,7 @@ used_terms = set()
 for gene in known_genes:
     ti = []
     gene_anno = annotation[gene]
-    for source in target_onto:
+    for source in target_ontology:
         ti.extend(gene_anno[source])
         used_terms.update(gene_anno[source])
     transactions.append(ti)

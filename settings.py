@@ -16,7 +16,7 @@ species = "human"
 # the GO terms aspect of interest:
 aspect = ["biological_process"]
 # ontologies to use:
-target_onto = ["Gene Ontology", "Reactome", "Human Phenotype Ontology"]
+target_ontology = ["Gene Ontology", "Reactome", "Human Phenotype Ontology"]
 # the genes of interest:
 genes = test_genes2
 # genes are symbols instead of UniProtKB IDS:

@@ -80,25 +80,27 @@ species_genes.update(set(gene_reactome_annotation.keys()))
 ## HPO ANNOTATIONS
 if species == "human":
 
-    gene_hpo_symbol_annotation = hpo.load_hpo_annotation(hpo_annotation_file)
-    gene_hpo_annotation = {}
-    gene_symbol_hpo = set()
+    gene_hpo_annotation = hpo.load_hpo_annotation(hpo_annotation_file)
+    gene_hpo_annotation_with_uniprot = {}
+    gene_hpo_annotation_with_symbol = {}
     
-    # Try to replace the gene symbols by their UniProtKB IDs according to the GAF file
+    # Try to replace the default gene symbols by their UniProtKB IDs according to the GAF file
     for symbol in gene_hpo_annotation.keys():
         try:
             uniprot_id = gaf_symbol_id_dict[symbol]
-            print("OK")
-            gene_hpo_annotation[uniprot_id] = gene_hpo_symbol_annotation[symbol]
+            gene_hpo_annotation_with_uniprot[uniprot_id] = gene_hpo_annotation[symbol]
         
         # if a corresponding id is not found from the GAF file, save the symbols and their values
         except KeyError:
-            print("not OK")
-            gene_symbol_hpo.add(symbol)
+            gene_hpo_annotation_with_symbol[symbol] = gene_hpo_annotation[symbol]
 
-### query UniProtKB to find the corresponding ids ###
-hpo_symbol_id_dict = up.get_symbol_dict(gene_symbol_hpo, species=species)
-species_genes.update(set(gene_hpo_annotation.keys()))
+    # query UniProtKB to find the corresponding ids of the remaining symbols and add them
+    mg_symbol_id_dict = up.get_symbol_dict(list(gene_hpo_annotation_with_symbol.keys()))
+    for symbol in mg_symbol_id_dict.keys():
+        uniprot_id = mg_symbol_id_dict[symbol]
+        gene_hpo_annotation_with_uniprot[uniprot_id] = gene_hpo_annotation_with_symbol[symbol]
+
+    species_genes.update(set(gene_hpo_annotation.keys()))
 
 ## HPO ONTOLOGY
 hpo_onto = obo_parser.GODag(hpo_obo_file)
@@ -162,8 +164,8 @@ with open("%s/%s_gene_symbol.csv" % (data_path, species), 'wt') as csv:
     csv.write("symbol,id\n")
     for key in gaf_symbol_id_dict.keys():
         csv.write("%s,%s\n" % (key, gaf_symbol_id_dict[key]))
-    for key in hpo_symbol_id_dict.keys():
-        csv.write("%s,%s\n" % (key, hpo_symbol_id_dict[key]))
+    for key in mg_symbol_id_dict.keys():
+        csv.write("%s,%s\n" % (key, mg_symbol_id_dict[key]))
 
 end_exp = tm.time()
 

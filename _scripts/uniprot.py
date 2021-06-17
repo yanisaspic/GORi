@@ -24,6 +24,7 @@ def translation(liste, input, output, species):
 
 def writing(liste, retour):
     dico = {}
+
     for i in liste :
 
         if i.get(retour) is None :
@@ -35,10 +36,9 @@ def writing(liste, retour):
 
             else :
                 continue
-            
+    
     return dico
 
 def get_symbol_dict(liste, input = 'symbol', output = 'uniprot', species = 'human'):
     out = translation(liste, input, output, species)
-    print(out)
     return writing(out, output)
