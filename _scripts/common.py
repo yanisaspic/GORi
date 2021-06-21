@@ -151,3 +151,25 @@ def record_iterator(handle, fields):
     for inline in handle:
         inrec = inline.rstrip("\n").split("\t")
         yield dict(zip(fields, inrec))
+
+def read_csv(x):
+    """
+    # Description :
+    Will read a file .csv and put its data in a set
+
+    # Argument :
+    ``x`` (str): Name of the file .csv from which we want to extract the data
+
+    # Usage : 
+    >>> getGenes = fichier_de_base("GSE31684_Intersect_genes.csv")
+    """
+    with open(x,'r') as f:
+        genes = []
+        read = csv.reader(f)
+
+        for i in read : 
+            bop = " ".join(i)
+            genes.append(bop)
+        del genes[0]
+
+    return set(genes)
