@@ -77,25 +77,63 @@ def get_term_ontology(term_id, ontologies):
     """
     return ontologies[(term_id[:2])]
 
-def term_weight(term_id, ontologies):
+def get_extrinsic_IC(annotations):
     """
     # Description
-    Returns a weight between 0 and 1 corresponding to the Information Content (IC) of an ontology term.
-    IC = p/(p+c) with *p = number of parent terms and *c = number of children terms.
+    Returns a dict of terms as keys and their Information Content (IC) as values. The IC is calculated
+    according to the frequencies of each term in the annotations.
 
     # Arguments
-    ``term_id`` (string): the unique and stable identifier of an ontology term. \n
-    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters as keys.
+    ``annotations`` (dict of dict): a dict of genes as keys and their terms as values. The terms must 
+    be grouped according to their source ontology.
 
     # Usage
-    >>> onto = {
-        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
-        'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
-    >>> print(term_weight("GO:0005524", onto))
-    ... 1
+    >>> annotations = {
+        'GeneA': {
+            'GO': ["GO:0009987", "GO:0008150"], 
+            'R-': ["R-HSA-73857", "R-HSA-74160"],
+            'HP': set()
+            },
+        'GeneB': {
+            'GO': ["GO:0008150"], 
+            'R-': ["R-HSA-74160"],
+            'HP': ["HP:0000001"]
+            },
+        'GeneC': {
+            'GO': ["GO:0009987", "GO:0008150", "GO:0030029"], 
+            'R-': ["R-HSA-73857", "R-HSA-74160", "R-HSA-1643685"],
+            'HP': ["HP:0000118", "HP:0000001"]
+            }
+        }
+    >>> print(get_extrinsic_IC(annotations))
+    ... {'GO:0009987': 0.37, 'GO:0008150': -0.0, 'R-HSA-73857': 0.37, 'R-HSA-74160': -0.0, 
+    'HP:0000001': -0.0, 'GO:0030029': 1.0, 'R-HSA-1643685': 1.0, 'HP:0000118': 0.63}
     """
-    source = get_term_ontology(term_id, ontologies)
-    term = source[term_id]
-    top_lineage = len(term.get_all_parents())
-    bottom_lineage = len(term.get_all_children())
-    return (top_lineage + 1) / (top_lineage + bottom_lineage + 1)
+    ## Reads the annotations to get the absolute frequencies of the terms and the number
+    ## genes annotated by each ontology
+    annotated_genes_count = {}
+    terms_count = {}
+    for gene in annotations.keys():
+        one_gene_annotations_from_all_onto = annotations[gene]
+        for ontology in one_gene_annotations_from_all_onto.keys():
+            one_gene_annotations_from_one_onto = one_gene_annotations_from_all_onto[ontology]
+            if len(one_gene_annotations_from_one_onto) > 0:
+                annotated_genes_count[ontology] = annotated_genes_count.get(ontology, 0) + 1
+                for term in one_gene_annotations_from_one_onto:
+                    terms_count[term] = terms_count.get(term, 0) + 1
+
+    ## Reads the absolute frequencies and the ontology counters to get the relative frequencies
+    min_freq = 1
+    for term in terms_count.keys():
+        term_prefix = term[:2]
+        term_freq = terms_count[term] / annotated_genes_count[term_prefix]
+        terms_count[term] = term_freq
+        if term_freq <= min_freq:
+            min_freq = term_freq
+
+    ## Reads the relative frequencies to get the relative Information Content of a term
+    ## IC = -log(f)
+    max_IC = -math.log(min_freq)
+    for term in terms_count.keys():
+        terms_count[term] = round(-math.log(terms_count[term]) / max_IC, 2)
+    return terms_count

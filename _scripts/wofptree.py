@@ -9,7 +9,7 @@ import pandas as pd
 import time as tm
 from treelib import Node, Tree
 from collections import Counter, OrderedDict
-from _scripts import ontology
+from _scripts import histogramme as hist
 
 class NodeData():
     """Data stored inside a node of the FP tree : node frequency and term weight."""
@@ -343,6 +343,7 @@ def mine_association_rules(trans_db, weight_items, min_item_freq = 0.1, min_item
     ... {'D => A': 0.5, 'A => B': 0.67, 'D => B': 0.5, 'D => C': 0.5}
     """
     freq_items = get_frequency(trans_db)
+    print(freq_items)
     freq_items = filter_frequency(freq_items, min_item_freq)
     tree, item_nodes = construct_fptree(trans_db, freq_items, weight_items)
     return get_association_rules(tree, item_nodes, freq_items, min_item_weight, min_pattern_conf)

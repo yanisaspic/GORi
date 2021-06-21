@@ -93,12 +93,12 @@ begin = tm.time()
 
 # Convert input gene ids into symbols
 if symbol:
+    gene_symbol_to_id_dict = {}
     reader = csv.reader(open("%s/%s_gene_symbol.csv" % (data_path, species), 'rt'))
-    gene_symbol_id_dict = {}
     for row in reader:
-        k, v = row
-        gene_symbol_id_dict[k] = v
-    genes = cmn.get_values_from_keys(genes, gene_symbol_id_dict)
+        symbol, uniprot = row
+        gene_symbol_to_id_dict[symbol] = uniprot
+    target_genes = cmn.get_values_from_keys(keys=target_genes, dictio=gene_symbol_to_id_dict)
 
 # load ontologies
 ontologies = {
@@ -110,24 +110,26 @@ if species == "human":
 
 ## extract the annotations corresponding to the selected genes:
 with open("%s/%s_gene_annotation.json" % (data_path, species), 'rt') as anno:
-    annotation = json.load(anno)
+    species_all_annotations = json.load(anno)
 
-## extract the annotations corresponding to the selected ontologies:
+#_________________________________________ W E I G H T I N G
+
+#___________ Get the terms Information Content : species corpora-based (extrinsic)
+species_corpora_IC = onto.get_extrinsic_IC(species_all_annotations)
+
+## extract the annotations of the target genes and convert them to transactions 
+## regardless of the ontologies sources
 transactions = []
-known_genes = set(genes).intersection(set(annotation.keys()))
-used_terms = set()
-for gene in known_genes:
-    ti = []
-    gene_anno = annotation[gene]
-    for source in target_ontology:
-        ti.extend(gene_anno[source])
-        used_terms.update(gene_anno[source])
-    transactions.append(ti)
+known_target_genes = set(target_genes).intersection(set(species_all_annotations.keys()))
 
-## calculate the items weights
-item_weights = {}
-for term in used_terms:
-    item_weights[term] = onto.term_weight(term, ontologies)
+ontology_terms_found = set()
+for gene in known_target_genes:
+    ti = []
+    gene_annotations = species_all_annotations[gene]
+    for source in ontologies.keys():
+        ti.extend(gene_annotations[source])
+        ontology_terms_found.update(gene_annotations[source])
+    transactions.append(ti)
 
 end_load = tm.time()
 
@@ -139,7 +141,7 @@ min_item_weight = 0.50                   #
 min_pattern_conf = 0.75                  #
 ##########################################
 
-asso_rules = wofp.mine_association_rules(transactions, item_weights, min_item_freq, min_item_weight, min_pattern_conf)
+asso_rules = wofp.mine_association_rules(transactions, items_weights, min_item_freq, min_item_weight, min_pattern_conf)
 asso_rules = filter_association_rules_with_onto(asso_rules, ontologies)
 asso_rules = rename_association_rules_with_onto(asso_rules, ontologies)
 print(asso_rules)
