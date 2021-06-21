@@ -29,7 +29,7 @@ data_path = "./data"
 gaf_file = "%s/goa_%s.gaf" % (data_path, species)
 
 go_obo_url = "http://current.geneontology.org/ontology/go-basic.obo"
-go_obo_file = "%s/go-basic.obo" % data_path
+go_obo_file = "%s/go.obo" % data_path
 
 reactome_hierarchy_url = "https://reactome.org/download/current/ReactomePathwaysRelation.txt"
 reactome_hierarchy_file = "%s/reactome_hierarchy.txt" % data_path

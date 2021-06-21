@@ -66,7 +66,8 @@ def get_term_ontology(term_id, ontologies):
 
     # Arguments
     ``term_id`` (string): the unique and stable identifier of an ontology term. \n
-    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters as keys.
+    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters 
+    as keys.
 
     # Usage
     >>> onto = {
@@ -76,6 +77,90 @@ def get_term_ontology(term_id, ontologies):
     ... 47284
     """
     return ontologies[(term_id[:2])]
+
+def get_term_ends(term_id, ontologies, roots = False):
+    """
+    # Description
+    Returns the ID of all the leaf or root nodes for a given ontology term.
+
+    # Arguments 
+    ``term_id`` (string): the unique and stable identifier of an ontology term. \n
+    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters 
+    as keys.
+
+    # Usage
+    >>> onto = {
+        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
+        'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
+    >>> print(get_term_ends('GO:0031424', onto))
+    ... {'GO:1905716', 'GO:1905717'}
+    >>> print(get_term_ends('R-HSA-975634', onto, roots=True))
+    ... {'R-HSA-9709957', 'R-HSA-1430728'}
+    """
+    extremes = set()
+    source = get_term_ontology(term_id, ontologies)
+    term = source[term_id]
+
+    # get all the parents or all the children of a term (according to roots value)
+    if roots:
+        tree_terms_id = term.get_all_upper()
+    else:
+        tree_terms_id = term.get_all_lower()
+
+    # root = a term without upper terms
+    # leaf = a term without lower terms
+    for tree_tid in tree_terms_id:
+        tree_term = source[tree_tid]
+        if roots:
+            if len(tree_term.parents) + len(tree_term.relationship) == 0:
+                extremes.add(tree_tid)
+        else:
+            if len(tree_term.children) + len(tree_term.relationship_rev) == 0:
+                extremes.add(tree_tid)
+    return extremes
+
+def get_intrinsic_IC(term_id, ontologies):
+    """
+    # Description
+    Returns the Information Content of an ontology term t according to its features in the ontology.
+    numerator = ( leaves(t)/subsumers(t) ) + 1
+    denominator = leaves(root) + 1
+    IC(t) = -log(numerator/denominator)
+    @ Ontology-based information content computation, Sánchez et al. (2011)
+    @ Knowledge Based Systems 24 (297-303)
+
+    # Arguments
+    ``term_id`` (string): the unique and stable identifier of an ontology term. \n
+    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters 
+    as keys.
+
+    # Usage
+    >>> onto = {
+        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
+        'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
+    >>> print(get_intrinsic_IC('GO:0009913', onto))
+    ... 8.3
+    >>> print(get_intrinsic_IC('GO:1905716', onto))
+    ... 9.4
+    """
+    # numerator
+    n_term_leaves = len(get_term_ends(term_id, ontologies))
+    source = get_term_ontology(term_id, ontologies)
+    term = source[term_id]
+        # include the term itself with +1 (e.g. if term is root, subsumers(term) = 1)
+    n_term_subsumers = len(term.get_all_upper()) + 1
+    numerator = n_term_leaves / n_term_subsumers + 1
+
+    # denominator
+    term_roots = get_term_ends(term_id, ontologies, roots=True)
+    n_root_leaves = 0
+    for root in term_roots:
+        n_root_leaves += len(get_term_ends(root, ontologies))
+    denominator = n_root_leaves + 1
+
+    # intrinsic IC
+    IC = round(-math.log(numerator/denominator), 2)
+    return IC
 
 def get_extrinsic_IC(annotations):
     """
