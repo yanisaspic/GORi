@@ -21,9 +21,9 @@ def save_as_obo(dictio, filename, header):
     ``header`` (string): header added to the .obo file.
 
     # Usage
-    >>> oboDag = goatools.obo_parser.GODag("go-basic.obo")
+    >>> oboDag = goatools.obo_parser.GODag("go.obo")
     >>> oboDag.pop(x)
-    >>> save_as_obo(oboDag, "smaller_go-basic.obo")
+    >>> save_as_obo(oboDag, "smaller_go.obo")
     """
 
     # .obo file header:
@@ -71,7 +71,7 @@ def get_term_ontology(term_id, ontologies):
 
     # Usage
     >>> onto = {
-        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
+        'GO': obo_parser.GODag("go.obo", optional_attrs = "relationship"),
         'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
     >>> print(len(get_term_ontology("GO:0005524", onto)))
     ... 47284
@@ -90,7 +90,7 @@ def get_term_ends(term_id, ontologies, roots = False):
 
     # Usage
     >>> onto = {
-        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
+        'GO': obo_parser.GODag("go.obo", optional_attrs = "relationship"),
         'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
     >>> print(get_term_ends('GO:0031424', onto))
     ... {'GO:1905716', 'GO:1905717'}
@@ -119,29 +119,30 @@ def get_term_ends(term_id, ontologies, roots = False):
                 extremes.add(tree_tid)
     return extremes
 
-def get_intrinsic_IC(term_id, ontologies):
+def get_one_intrinsic_IC(term_id, ontologies, max_leaves = {}):
     """
     # Description
     Returns the Information Content of an ontology term t according to its features in the ontology.
     numerator = ( leaves(t)/subsumers(t) ) + 1
     denominator = leaves(root) + 1
-    IC(t) = -log(numerator/denominator)
+    IC(t) = -log(numerator/denominator) \n
     @ Ontology-based information content computation, Sánchez et al. (2011)
     @ Knowledge Based Systems 24 (297-303)
 
     # Arguments
     ``term_id`` (string): the unique and stable identifier of an ontology term. \n
     ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters 
-    as keys.
+    as keys. \n
+    ``max_leaves`` (dict): root term ids as keys and their number of leaves as values.
 
     # Usage
     >>> onto = {
-        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
+        'GO': obo_parser.GODag("go.obo", optional_attrs = "relationship"),
         'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
-    >>> print(get_intrinsic_IC('GO:0009913', onto))
-    ... 8.3
-    >>> print(get_intrinsic_IC('GO:1905716', onto))
-    ... 9.4
+    >>> print(get_one_intrinsic_IC('GO:0009913', onto))
+    ... 8.3, {'GO:0008150': 12086}
+    >>> print(get_one_intrinsic_IC('GO:1905716', onto))
+    ... 9.4, {'GO:0008150': 12086}
     """
     # numerator
     n_term_leaves = len(get_term_ends(term_id, ontologies))
@@ -153,16 +154,67 @@ def get_intrinsic_IC(term_id, ontologies):
 
     # denominator
     term_roots = get_term_ends(term_id, ontologies, roots=True)
+    # if the term is a root
+    if len(term_roots) < 1:
+        term_roots.add(term_id)
     n_root_leaves = 0
     for root in term_roots:
-        n_root_leaves += len(get_term_ends(root, ontologies))
+        try:
+            n_root_leaves = max_leaves[root]
+        except KeyError:
+            max_leaves[root] = len(get_term_ends(root, ontologies))
+            n_root_leaves += max_leaves[root]
     denominator = n_root_leaves + 1
 
     # intrinsic IC
     IC = round(-math.log(numerator/denominator), 2)
-    return IC
+    return IC, max_leaves
 
-def get_extrinsic_IC(annotations):
+def get_all_intrinsic_IC(terms_ids, ontologies):
+    """
+    # Description
+    Returns the relative IC content of ontology terms according to their features in the
+    ontology. The IC are returned in a dict with terms ids as keys and values in [0, 1].
+
+    # Arguments
+    ``terms_ids`` (list of strings): the unique and stable identifier of an ontology term. \n
+    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters 
+    as keys.
+
+    # Usage
+    >>> onto = {
+        'GO': obo_parser.GODag("go.obo", optional_attrs = "relationship"),
+        'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
+    >>> terms = [
+        "GO:0031424", "GO:0009888", "GO:0008150", 
+        "R-HSA-9709957", "R-HSA-975634", "R-HSA-6806667"]
+    >>> print(get_all_intrinsic_IC(terms, onto))
+    ... {'GO:0031424': 1.0, 'GO:0009888': 0.44, 'GO:0008150': -0.0, 'R-HSA-9709957': -0.0, 
+    'R-HSA-975634': 0.46, 'R-HSA-6806667': 1.0}
+    """
+    all_max_leaves = {}
+    max_int_IC = {}
+    int_IC = {}
+    for term_prefix in ontologies.keys():
+        max_int_IC[term_prefix] = 0
+    
+    # calculate the IC values
+    for term in terms_ids:
+        term_prefix = term[:2]
+        term_IC, max_leaves = get_one_intrinsic_IC(term, ontologies, all_max_leaves)
+        all_max_leaves.update(max_leaves)
+        int_IC[term] = term_IC
+
+        if term_IC > max_int_IC[term_prefix]:
+            max_int_IC[term_prefix] = term_IC
+
+    # divide them by the maximal value of the ontology
+    for term in int_IC.keys():
+        term_prefix = term[:2]
+        int_IC[term] = round(int_IC[term] / max_int_IC[term_prefix], 2)
+    return int_IC
+
+def get_all_extrinsic_IC(annotations):
     """
     # Description
     Returns a dict of terms as keys and their Information Content (IC) as values. The IC is calculated
@@ -190,7 +242,7 @@ def get_extrinsic_IC(annotations):
             'HP': ["HP:0000118", "HP:0000001"]
             }
         }
-    >>> print(get_extrinsic_IC(annotations))
+    >>> print(get_all_extrinsic_IC(annotations))
     ... {'GO:0009987': 0.37, 'GO:0008150': -0.0, 'R-HSA-73857': 0.37, 'R-HSA-74160': -0.0, 
     'HP:0000001': -0.0, 'GO:0030029': 1.0, 'R-HSA-1643685': 1.0, 'HP:0000118': 0.63}
     """

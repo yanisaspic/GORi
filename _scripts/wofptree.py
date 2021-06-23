@@ -319,16 +319,14 @@ def get_association_rules(fptree, item_nodes, freq_items, min_item_weight, min_p
                         'coverage': round(parent_freq, 2)}
     return frequent_pattern
 
-def mine_association_rules(trans_db, weight_items, min_item_freq = 0.1, min_item_weight = 0.25, min_pattern_conf = 0.5):
+def mine_association_rules(trans_db, weight_items):
     """
     # Description
     Returns the frequent patterns in a trans database using a weighted ordered FP tree.
 
     # Arguments
     ``trans_db`` (list of sublists): your transaction database. A sublist is a transaction with its items. \n
-    ``weight_items`` (dict): the items names as keys and their weights as values. \n
-    ``min_item_freq`` (float): the minimum frequency necessary to keep an item. 0 < min_item_freq <= 1. \n
-    ``min_item_weight`` (float): itemsets with a weight equal or higher to this value (0<v<1) are considered patterns.
+    ``weight_items`` (dict): the items names as keys and their weights as values.
 
     # Usage
     >>> trans = [
@@ -344,6 +342,7 @@ def mine_association_rules(trans_db, weight_items, min_item_freq = 0.1, min_item
     """
     freq_items = get_frequency(trans_db)
     print(freq_items)
+    print(weight_items)
     freq_items = filter_frequency(freq_items, min_item_freq)
     tree, item_nodes = construct_fptree(trans_db, freq_items, weight_items)
     return get_association_rules(tree, item_nodes, freq_items, min_item_weight, min_pattern_conf)

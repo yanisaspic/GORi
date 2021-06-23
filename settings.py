@@ -17,9 +17,9 @@ species = "human"
 # the GO terms aspect of interest:
 aspect = ["biological_process"]
 # the genes of interest:
-target_genes = pig_test_genes
+target_genes = test_genes2
 # genes are symbols instead of UniProtKB IDS:
-symbol = False
+symbol = True
 
 ## data relative path:
 data_path = "./data"
