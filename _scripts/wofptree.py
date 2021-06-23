@@ -9,7 +9,7 @@ import pandas as pd
 import time as tm
 from treelib import Node, Tree
 from collections import Counter, OrderedDict
-from _scripts import histogramme as hist
+from _scripts import histogramme as hist, common as cmn
 
 class NodeData():
     """Data stored inside a node of the FP tree : node frequency and term weight."""
@@ -20,7 +20,7 @@ class NodeData():
     def __repr__(self):
         return 'freq: %s, weight: %s' % (self.freq, self.weight)
 
-def get_frequency(trans_db):
+def get_items_frequency(trans_db):
     """
     # Description
     Returns a data frame containing the frequencies of every item.
@@ -36,7 +36,7 @@ def get_frequency(trans_db):
             ["Y", "C", "D"],
             ["D", "A"]
         ]
-    >>> freq_items = get_frequency(trans_db = trans)
+    >>> freq_items = get_items_frequency(trans_db = trans)
     >>> print(freq_items)
     ...   item  freq
         0    A   0.6
@@ -48,12 +48,16 @@ def get_frequency(trans_db):
     """
     item_freq = {}
     total_trans = len(trans_db)
+
+    # get absolute frequencies
     for t in trans_db:
         for item in t:
-            try:
-                item_freq[item] += 1/total_trans
-            except KeyError:
-                item_freq[item] = 1/total_trans
+            item_freq[item] = item_freq.get(item, 0) + 1
+
+    # get relative frequencies
+    for t in trans_db:
+        for item in t:
+            item_freq[item] = round(item_freq[item] / total_trans, 2)
     freq_df = pd.DataFrame({'item': list(item_freq.keys()), 'freq': list(item_freq.values())})
     return freq_df
 
@@ -74,7 +78,7 @@ def filter_frequency(freq_items, min_item_freq):
             ["Y", "C", "D"],
             ["D", "A"]
         ]
-    >>> freq_items = get_frequency(trans_db = trans)
+    >>> freq_items = get_items_frequency(trans_db = trans)
     >>> freq_items = filter_frequency(freq_items, min_item_freq = 0.25)
     >>> print(freq_items)
     ...   item  freq
@@ -105,7 +109,7 @@ def order_transaction(trans, freq_items):
             ["Y", "C", "D"],
             ["D", "A"]
         ]
-    >>> freq_items = get_frequency(trans_db = trans)
+    >>> freq_items = get_items_frequency(trans_db = trans)
     >>> freq_items = filter_frequency(freq_items, min_item_freq = 0.25)
     >>> print(order_transaction(trans[3], freq_items))
     ... ['D', 'C']
@@ -133,7 +137,7 @@ def construct_fptree(trans_db, freq_items, weight_items):
             ["D", "A"]
         ]
     >>> w_items = {'A': 0.5, 'B': 0.1, 'D': 0.8, 'C': 0.1, 'Y': 0.5, 'E': 0.23}
-    >>> freq_items = get_frequency(trans_db = trans)
+    >>> freq_items = get_items_frequency(trans_db = trans)
     >>> freq_items = filter_frequency(freq_items, min_item_freq = 0.25)
     >>> tree, item_nodes = construct_fptree(trans, freq_items, w_items)
     >>> tree.show(idhidden=False)
@@ -216,7 +220,7 @@ def get_branch(fptree, nid, min_item_weight):
             ["D", "A"]
         ]
     >>> w_items = {'A': 0.5, 'B': 0.1, 'D': 0.8, 'C': 0.1, 'Y': 0.5, 'E': 0.23}
-    >>> freq_items = get_frequency(trans_db = trans)
+    >>> freq_items = get_items_frequency(trans_db = trans)
     >>> freq_items = filter_frequency(freq_items, min_item_freq = 0.25)
     >>> tree, item_nodes = construct_fptree(trans, freq_items, w_items)
     >>> print(get_branch(tree, 4, 0.25))
@@ -252,7 +256,7 @@ def get_condition_tree(item, fptree, item_nodes, min_item_weight):
             ["D", "A"]
         ]
     >>> w_items = {'A': 0.5, 'B': 0.1, 'D': 0.8, 'C': 0.1, 'Y': 0.5, 'E': 0.23}
-    >>> freq_items = get_frequency(trans_db = trans)
+    >>> freq_items = get_items_frequency(trans_db = trans)
     >>> freq_items = filter_frequency(freq_items, min_item_freq = 0.25)
     >>> tree, item_nodes = construct_fptree(trans, freq_items, w_items)
     >>> print(get_condition_tree('C', tree, item_nodes, min_item_weight = 0.25))
@@ -263,7 +267,7 @@ def get_condition_tree(item, fptree, item_nodes, min_item_weight):
         cond_tree += Counter(get_branch(fptree, nid, min_item_weight))
     return cond_tree
 
-def get_association_rules(fptree, item_nodes, freq_items, min_item_weight, min_pattern_conf):
+def get_association_rules(fptree, item_nodes, freq_items, min_item_weight):
     """
     # Description
     Returns the associtation rules by reading the FPtree.
@@ -284,7 +288,7 @@ def get_association_rules(fptree, item_nodes, freq_items, min_item_weight, min_p
             ["D", "A"]
         ]
     >>> w_items = {'A': 0.5, 'B': 0.1, 'D': 0.8, 'C': 0.1, 'Y': 0.5, 'E': 0.23}
-    >>> freq_items = get_frequency(trans_db = trans)
+    >>> freq_items = get_items_frequency(trans_db = trans)
     >>> freq_items = filter_frequency(freq_items, min_item_freq = 0.25)
     >>> tree, item_nodes = construct_fptree(trans, freq_items, w_items)
     >>> print(get_association_rules(tree, item_nodes, freq_items, min_item_weight = 0.25, min_pattern_conf = 0.5))
@@ -319,14 +323,17 @@ def get_association_rules(fptree, item_nodes, freq_items, min_item_weight, min_p
                         'coverage': round(parent_freq, 2)}
     return frequent_pattern
 
-def mine_association_rules(trans_db, weight_items):
+def mine_association_rules(
+    trans_db, weight_items, freq_items = None, key_prefix_length = 2, manual = True):
     """
     # Description
     Returns the frequent patterns in a trans database using a weighted ordered FP tree.
 
     # Arguments
-    ``trans_db`` (list of sublists): your transaction database. A sublist is a transaction with its items. \n
-    ``weight_items`` (dict): the items names as keys and their weights as values.
+    ``trans_db`` (list of sublists): your transaction database. A sublist is a transaction with 
+    its items. \n
+    ``weight_items`` (dict): the items names as keys and their weights as values. \n
+    ``key_prefix_length`` (int): the length of the prefixes used to identify the groups of items.
 
     # Usage
     >>> trans = [
@@ -340,9 +347,25 @@ def mine_association_rules(trans_db, weight_items):
     >>> print(mine_association_rules(trans, w_items))
     ... {'D => A': 0.5, 'A => B': 0.67, 'D => B': 0.5, 'D => C': 0.5}
     """
-    freq_items = get_frequency(trans_db)
-    print(freq_items)
-    print(weight_items)
+    if freq_items is None:
+        freq_items = get_items_frequency(trans_db)
+        freq_items_dict = freq_items[['item', 'freq']].set_index('item').to_dict()['freq']
+    freq_items_splitted = cmn.split_dict_values(freq_items_dict, key_prefix_length)
+    freq_items_splitted['ALL'] = freq_items_dict.values()
+    print(freq_items_splitted)
+
+    weight_items_splitted = cmn.split_dict_values(weight_items, key_prefix_length)
+    weight_items_splitted['ALL'] = weight_items.values()
+    print(weight_items_splitted)
+
+    ###
+    # display histograms of frequencies and weights
+    ###
+
+    if manual:
+        min_item_freq = cmn.get_numeric_input("minimum frequency", 0, 1)
+        min_item_weight = cmn.get_numeric_input("minimum weight", 0, 1)
+
     freq_items = filter_frequency(freq_items, min_item_freq)
     tree, item_nodes = construct_fptree(trans_db, freq_items, weight_items)
-    return get_association_rules(tree, item_nodes, freq_items, min_item_weight, min_pattern_conf)
+    return get_association_rules(tree, item_nodes, freq_items, min_item_weight)

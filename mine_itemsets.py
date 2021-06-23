@@ -11,6 +11,59 @@ import time as tm
 import pandas as pd
 from _scripts import common as cmn, ontology as onto, wofptree as wofp
 
+def get_terms_frequencies(annotations):
+    """
+    # Description
+    Returns a dict of terms as keys and their Information Content (IC) as values. The IC is calculated
+    according to the frequencies of each term in the annotations.
+
+    # Arguments
+    ``annotations`` (dict of dict): a dict of genes as keys and their terms as values. The terms must 
+    be grouped according to their source ontology.
+
+    # Usage
+    >>> annotations = {
+        'GeneA': {
+            'GO': ["GO:0009987", "GO:0008150"], 
+            'R-': ["R-HSA-73857", "R-HSA-74160"],
+            'HP': set()
+            },
+        'GeneB': {
+            'GO': ["GO:0008150"], 
+            'R-': ["R-HSA-74160"],
+            'HP': ["HP:0000001"]
+            },
+        'GeneC': {
+            'GO': ["GO:0009987", "GO:0008150", "GO:0030029"], 
+            'R-': ["R-HSA-73857", "R-HSA-74160", "R-HSA-1643685"],
+            'HP': ["HP:0000118", "HP:0000001"]
+            }
+        }
+    >>> print(get_terms_frequencies(annotations))
+    ... {'GO:0009987': 0.67, 'GO:0008150': 1.0, 'R-HSA-73857': 0.67, 'R-HSA-74160': 1.0, 
+    'HP:0000001': 1.0, 'GO:0030029': 0.33, 'R-HSA-1643685': 0.33, 'HP:0000118': 0.5}
+    """
+    ## Reads the annotations to get the absolute frequencies of the terms and the number
+    ## genes annotated by each ontology
+    annotated_genes_count = {}
+    terms_count = {}
+    for gene in annotations.keys():
+        one_gene_annotations_from_all_onto = annotations[gene]
+        for ontology in one_gene_annotations_from_all_onto.keys():
+            one_gene_annotations_from_one_onto = one_gene_annotations_from_all_onto[ontology]
+            if len(one_gene_annotations_from_one_onto) > 0:
+                annotated_genes_count[ontology] = annotated_genes_count.get(ontology, 0) + 1
+                for term in one_gene_annotations_from_one_onto:
+                    terms_count[term] = terms_count.get(term, 0) + 1
+
+    # get the relative frequencies
+    for term in terms_count.keys():
+        term_prefix = term[:2]
+        term_freq = round(terms_count[term] / annotated_genes_count[term_prefix], 2)
+        terms_count[term] = term_freq
+
+    return terms_count
+
 def filter_association_rules_with_onto(asso_rules, ontologies, sep = " => ", mult_onto = True):
     """
     # Description
@@ -123,10 +176,13 @@ with open("%s/%s_gene_annotation.json" % (data_path, species), 'rt') as anno:
 transactions = []
 known_target_genes = set(target_genes).intersection(set(species_all_annotations.keys()))
 
-ontology_terms_found = set()
+target_annotations = {}         # used to calculate the frequencies
+ontology_terms_found = set()    # used to calculate the weights
+
 for gene in known_target_genes:
     ti = []
     gene_annotations = species_all_annotations[gene]
+    target_annotations[gene] = gene_annotations
     for source in ontologies.keys():
         ti.extend(gene_annotations[source])
         ontology_terms_found.update(gene_annotations[source])
@@ -135,12 +191,14 @@ ontology_terms_found = list(ontology_terms_found)
 
 end_load = tm.time()
 
-#_________________________________________ W E I G H T I N G
+#_________________________________________ W E I G H T S  &  F R E Q S 
 
 #___________ Get the terms Information Content : 
-
 # ontology feature-based (intrinsic)
 intrinsic_IC = onto.get_all_intrinsic_IC(ontology_terms_found, ontologies)
+
+#___________ Get the terms frequencies :
+terms_freq = get_terms_frequencies(target_annotations)
 
 end_weight = tm.time()
 
