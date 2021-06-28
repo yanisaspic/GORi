@@ -10,6 +10,7 @@ import requests
 import os
 import shutil
 import csv
+import pandas as pd
 
 def download_url(url, save_path, chunk_size=128):
     """
@@ -174,38 +175,7 @@ def read_csv(x):
 
     return set(genes)
 
-def get_numeric_input(label, mini, maxi):
-    """
-    # Description
-    Asks the user for an input value between min and max and returns basic messages if the value
-    is invalid.
-
-    # Arguments
-    ``label`` (string): a label corresponding to the variable you expect.
-    ``mini`` (float): the lowest threshold value.
-    ``maxi`` (float): the highest threshold value.
-
-    # Usage
-    >>> score = get_numeric_input("score", 0, 20)
-    ... Please set a valid score value (0 <= score <= 20): 30
-    ... Wrong input: out of limits value.
-    ... Please set a valid score value (0 <= score <= 20): A
-    ... Wrong input: non numeric value.
-    ... Please set a valid score value (0 <= score <= 20): 10
-    >>> print(score)
-    ... 10
-    """
-    var = input("Please set a valid %s value (%s <= %s <= %s): " % (label, mini, label, maxi))
-    try:
-        if float(var) < mini or float(var) > maxi:
-            print("Wrong input: out of limits value.")
-            var = get_numeric_input(label, mini, maxi)
-    except ValueError:
-        print("Wrong input: non numeric value.")
-        var = get_numeric_input(label, mini, maxi)
-    return var
-
-def split_dict_values(mixed_dict, key_prefix_length):
+def split_dict_values(mixed_dict, key_prefix_length = 2):
     """
     # Description
     Splits a dict into subdicts with values splitted according to group of keys.

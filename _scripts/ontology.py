@@ -119,7 +119,7 @@ def get_term_ends(term_id, ontologies, roots = False):
                 extremes.add(tree_tid)
     return extremes
 
-def get_one_intrinsic_IC(term_id, ontologies, max_leaves = {}):
+def get_one_intrinsic_IC_Sanchez(term_id, ontologies, max_leaves = {}):
     """
     # Description
     Returns the Information Content of an ontology term t according to its features in the ontology.
@@ -201,7 +201,7 @@ def get_all_intrinsic_IC(terms_ids, ontologies):
     # calculate the IC values
     for term in terms_ids:
         term_prefix = term[:2]
-        term_IC, max_leaves = get_one_intrinsic_IC(term, ontologies, all_max_leaves)
+        term_IC, max_leaves = get_one_intrinsic_IC_Sanchez(term, ontologies, all_max_leaves)
         all_max_leaves.update(max_leaves)
         int_IC[term] = term_IC
 

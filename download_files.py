@@ -168,7 +168,7 @@ for gene_id in species_genes:
                     continue
                 n_valid_leafid += 1
 
-                # add the term and its parents
+                # add the term and its parents (RS excluded)
                 ancestry = term.get_all_parents()
                 gene_terms_for_one_onto.add(leafid)
                 gene_terms_for_one_onto.update(ancestry)

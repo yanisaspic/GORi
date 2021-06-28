@@ -15,9 +15,11 @@ pig_test_genes = ['A0A287A243', 'A0A286ZP59', 'A0A287AXZ5', 'I3LS66', 'F1RKA6', 
 # the species of interest:
 species = "human"
 # the GO terms aspect of interest:
-aspect = ["biological_process"]
+target_aspect = ["biological_process"]
 # the genes of interest:
 target_genes = test_genes2
+# the ontologies of interest:
+target_onto = ["GO", "R-", "HP"]
 # genes are symbols instead of UniProtKB IDS:
 symbol = True
 

@@ -4,141 +4,72 @@ For a given set of genes, identify the frequent itemsets involving multiple onto
 
 from goatools import obo_parser
 from settings import *
+from math import inf
 
 import csv
 import json
 import time as tm
 import pandas as pd
-from _scripts import common as cmn, ontology as onto, wofptree as wofp
+from _scripts import common as cmn, ontology as onto, fptree as fp
 
-def get_terms_frequencies(annotations):
+def prune_rules(rules, ontologies):
     """
     # Description
-    Returns a dict of terms as keys and their Information Content (IC) as values. The IC is calculated
-    according to the frequencies of each term in the annotations.
+    Removes rules if a similar rule but with a deeper child term instead has been found.
 
     # Arguments
-    ``annotations`` (dict of dict): a dict of genes as keys and their terms as values. The terms must 
-    be grouped according to their source ontology.
+    ``rules`` (df): association rules with a body and a head. \n
+    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters 
+    as keys.
 
     # Usage
-    >>> annotations = {
-        'GeneA': {
-            'GO': ["GO:0009987", "GO:0008150"], 
-            'R-': ["R-HSA-73857", "R-HSA-74160"],
-            'HP': set()
-            },
-        'GeneB': {
-            'GO': ["GO:0008150"], 
-            'R-': ["R-HSA-74160"],
-            'HP': ["HP:0000001"]
-            },
-        'GeneC': {
-            'GO': ["GO:0009987", "GO:0008150", "GO:0030029"], 
-            'R-': ["R-HSA-73857", "R-HSA-74160", "R-HSA-1643685"],
-            'HP': ["HP:0000118", "HP:0000001"]
-            }
-        }
-    >>> print(get_terms_frequencies(annotations))
-    ... {'GO:0009987': 0.67, 'GO:0008150': 1.0, 'R-HSA-73857': 0.67, 'R-HSA-74160': 1.0, 
-    'HP:0000001': 1.0, 'GO:0030029': 0.33, 'R-HSA-1643685': 0.33, 'HP:0000118': 0.5}
+    >>> df = pd.DataFrame({'body': ['GO:0002755, 'GO:0002764, 'GO:0006955', 'GO:0000165'],
+    'head': ['R-HSA-445095', 'R-HSA-445095', 'R-HSA-445095', 'R-HSA-445095']})
+    >>> ontologies = ontologies = {
+    'GO': obo_parser.GODag('go-basic.obo', optional_attrs="relationship"), 
+    'R-': obo_parser.GODag('reactome.obo', optional_attrs="relationship")
+    }
+    >>> print(prune_rules(df, ontologies))
+    ... body          head
+    0  GO:0002755  R-HSA-445095
+    3  GO:0000165  R-HSA-445095
     """
-    ## Reads the annotations to get the absolute frequencies of the terms and the number
-    ## genes annotated by each ontology
-    annotated_genes_count = {}
-    terms_count = {}
-    for gene in annotations.keys():
-        one_gene_annotations_from_all_onto = annotations[gene]
-        for ontology in one_gene_annotations_from_all_onto.keys():
-            one_gene_annotations_from_one_onto = one_gene_annotations_from_all_onto[ontology]
-            if len(one_gene_annotations_from_one_onto) > 0:
-                annotated_genes_count[ontology] = annotated_genes_count.get(ontology, 0) + 1
-                for term in one_gene_annotations_from_one_onto:
-                    terms_count[term] = terms_count.get(term, 0) + 1
+    rules_bodies = set(rules['body'])
 
-    # get the relative frequencies
-    for term in terms_count.keys():
-        term_prefix = term[:2]
-        term_freq = round(terms_count[term] / annotated_genes_count[term_prefix], 2)
-        terms_count[term] = term_freq
+    for body in rules_bodies:
 
-    return terms_count
+        rules_with_body = rules.loc[rules['body'] == body]
+        if len(rules_with_body) > 0:
 
-def filter_association_rules_with_onto(asso_rules, ontologies, sep = " => ", mult_onto = True):
-    """
-    # Description
-    Filters out the association rules based on two related ontology terms.
+            # get the ontology parent terms of the body
+            source = onto.get_term_ontology(body, ontologies)
+            term = source[body]
+            parent_terms = term.get_all_upper()
 
-    # Arguments
-    ``asso_rules`` (dict): separated terms as keys and dict of metrics (confidence, lift, coverage) 
-    as values. \n
-    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 
-    characters as keys. \n
-    ``sep`` (string): the string separating two terms in a key. \n
-    ``mult_onto`` (boolean): should the associations between two terms of the same 
-    ontology be filtered out as well ?
+            # get the heads associated with this body
+            body_heads = list(rules_with_body['head'])
 
-    # Usage
-    >>> asso_rules = {
-        'GO:0002429 => GO:0002757': {'confidence': 1.0, 'lift': 1.73, 'coverage': 0.58}, 
-        'GO:0002757 => GO:0050865': {'confidence': 0.7, 'lift': 1.22, 'coverage': 0.58},
-        'GO:0002757 => GO:0010646': {'confidence': 0.57, 'lift': 1.0, 'coverage': 0.58}}
-    >>> ontologies = {
-        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
-        'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
-    >>> asso_rules = filter_association_rules_with_onto(asso_rules, ontologies)
-    >>> print(asso_rules)
-    ... {'GO:0002757 => GO:0050865': {'confidence': 0.7, 'lift': 1.22, 'coverage': 0.58}, 
-        'GO:0002757 => GO:0010646': {'confidence': 0.57, 'lift': 1.0, 'coverage': 0.58}}
-    """
-    filtered_asso_rules = {}
-    for rul in asso_rules.keys():
-        body, head = rul.split(sep)
-        if mult_onto and body[:2] == head[:2]:
-            continue
-        source = onto.get_term_ontology(body, ontologies)
-        body = source[body]
-        if head in body.get_all_upper():
-            continue
-        filtered_asso_rules[rul] = asso_rules[rul]
-    return filtered_asso_rules
+            # if a rule has a parent term as a body with a similar head, delete it
+            rules = rules.drop(rules[ ( rules['body'].isin(parent_terms) ) &
+                ( rules['head'].isin(body_heads) ) ].index)
+            
+            # for one body, if a rule has the parent term of an other one as a head, remove it
+            heads_rules_to_ignore = set()
 
-def rename_association_rules_with_onto(asso_rules, ontologies, sep = " => "):
-    """
-    # Description
-    Renames the association rules with human readable labels.
+            for head in body_heads:
 
-    # Arguments
-    ``asso_rules`` (dict): separated terms as keys and dict of metrics (confidence, lift, coverage) as values. \n
-    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters as keys. \n
-    ``sep`` (string): the string separating two terms in a key.
+                # get the ontology parent terms of the head
+                source = onto.get_term_ontology(head, ontologies)
+                term = source[head]
+                parent_terms = term.get_all_upper()
 
-    # Usage
-    >>> asso_rules = {
-        'GO:0002429 => GO:0002757': {'confidence': 1.0, 'lift': 1.73, 'coverage': 0.58}, 
-        'GO:0002757 => GO:0050865': {'confidence': 0.7, 'lift': 1.22, 'coverage': 0.58},
-        'GO:0002757 => GO:0010646': {'confidence': 0.57, 'lift': 1.0, 'coverage': 0.58}}
-    >>> ontologies = {
-        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
-        'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
-    >>> asso_rules = rename_association_rules_with_onto(asso_rules, ontologies)
-    >>> print(asso_rules)
-    ... {
-        'immune response-activating cell surface receptor signaling pathway => immune response-activating signal transduction': {'confidence': 1.0, 'lift': 1.73, 'coverage': 0.58}, 
-        'immune response-activating signal transduction => regulation of cell activation': {'confidence': 0.7, 'lift': 1.22, 'coverage': 0.58}, 
-        'immune response-activating signal transduction => regulation of cell communication': {'confidence': 0.57, 'lift': 1.0, 'coverage': 0.58}
-        }
-    """
-    renamed_asso_rules = {}
-    for rul in asso_rules.keys():
-        body, head = rul.split(sep)
-        body_source = onto.get_term_ontology(body, ontologies)
-        body_name = body_source[body].name
-        head_source = onto.get_term_ontology(head, ontologies)
-        head_name = head_source[head].name
-        new_key = "%s (%s)%s%s (%s)" % (body_name, body, sep, head_name, head)
-        renamed_asso_rules[new_key] = asso_rules[rul]
-    return renamed_asso_rules
+                found_parents = parent_terms.intersection(set(body_heads))
+                heads_rules_to_ignore.update(found_parents)
+            
+            rules = rules.drop(rules[ ( rules['body'] == body ) &
+                ( rules['head'].isin(heads_rules_to_ignore) ) ].index)
+
+    return rules
 
 # - - - - - - - - -- - - - - - -- - - - - - -- - -- - - -- - -- - - -- - -- - -- - - -- - - -- - -  - - - -
 # - - - - - - - - -- - - - - - -- - - - - - -- - -- - - -- - -- - - -- - -- - -- - - -- - - -- - -  - - - -
@@ -180,13 +111,22 @@ target_annotations = {}         # used to calculate the frequencies
 ontology_terms_found = set()    # used to calculate the weights
 
 for gene in known_target_genes:
+    n_found_target_onto = 0
     ti = []
     gene_annotations = species_all_annotations[gene]
     target_annotations[gene] = gene_annotations
-    for source in ontologies.keys():
-        ti.extend(gene_annotations[source])
-        ontology_terms_found.update(gene_annotations[source])
-    transactions.append(ti)
+
+    # check if the annotation has terms corresponding to our target ontologies
+    for source in target_onto:
+        if len(gene_annotations[source]) > 0:
+            ti.extend(gene_annotations[source])
+            n_found_target_onto += 1
+
+    # don't count uncomplete annotations in order to have valid frequencies during the FPTree
+    if n_found_target_onto == len(target_onto):
+        transactions.append(ti)
+        ontology_terms_found.update(ti)
+        
 ontology_terms_found = list(ontology_terms_found)
 
 end_load = tm.time()
@@ -197,23 +137,36 @@ end_load = tm.time()
 # ontology feature-based (intrinsic)
 intrinsic_IC = onto.get_all_intrinsic_IC(ontology_terms_found, ontologies)
 
-#___________ Get the terms frequencies :
-terms_freq = get_terms_frequencies(target_annotations)
-
 end_weight = tm.time()
 
 #_________________________________________ M I N I N G
 
-##########################################
-min_item_freq = 0.20                     #
-min_item_weight = 0.95                   #
-min_pattern_conf = 0.33                  #
-##########################################
+rules_metrics = fp.mine_rules_metrics(transactions, intrinsic_IC)
+print(len(rules_metrics))
 
-asso_rules = wofp.mine_association_rules(transactions, intrinsic_IC)
-asso_rules = filter_association_rules_with_onto(asso_rules, ontologies)
-asso_rules = rename_association_rules_with_onto(asso_rules, ontologies)
-print(asso_rules)
+# filter out the rules involving a body and a head sharing a relationship in an ontology
+rules_metrics = rules_metrics[ 
+    rules_metrics['body'].str[:2] != rules_metrics['head'].str[:2]
+    ]
+print(len(rules_metrics))
+
+rules_metrics = prune_rules(rules_metrics, ontologies)
+print(len(rules_metrics))
+
+# plot the metrics together
+bodies, heads = list(rules_metrics['body']), list(rules_metrics['head'])
+rules_colors = fp.get_color_labels( [bodies, heads] )
+
+rules_plot = fp.get_scatterplot(rules_metrics, 'conf', 'lift', 
+"Confidence and lift values of the frequent patterns mined", rules_colors,
+{'#ff00ff': 'GO + Reactome', '#00ffff': 'GO + HPO', '#ffff00': 'Reactome + HPO'})
+rules_plot.show()
+# set the threshold values
+min_rule_conf = fp.get_numeric_input("minimum confidence", 0, 1)
+min_rule_lift = fp.get_numeric_input("minimum lift", 1, inf)
+# filter according to the thresholds
+rules_metrics = fp.filter_confidence_and_lift(rules_metrics, min_rule_conf, min_rule_lift)
+print(len(rules_metrics))
 
 end_min = tm.time()
 
