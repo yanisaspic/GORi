@@ -290,3 +290,40 @@ def prune_rules(rules, ontologies):
                 ( rules['head'].isin(heads_rules_to_ignore) ) ].index)
 
     return rules
+
+def get_one_intrinsic_IC_Zhou(termID, ontologie, k = 0.5):
+    
+    term = ontologie[termID[:2]]
+    
+    #part a - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #number of leaf connected to the termID
+    hypo_a = len(term[termID].get_all_children()) 
+        #id root :
+    term_root = onto.get_term_ends(termID, ontologie , roots = True)
+        #get all children from the root
+    if len(term_root) < 1 : 
+        term_root.add(termID)
+    for i in term_root :
+            maxChild = onto.get_term_ends(i, ontologie , roots = False)
+            #number children from the root including the root
+            maxNode = len(term[i].get_all_children())     
+
+    a = (1-(math.log(hypo_a + 1))/(math.log(maxNode)))
+
+    #part b - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #depth of termID
+    depth_a = term[termID].depth + 1
+        #max depth among the children of the root:
+    maxDepth = 0
+    if len(term_root) == 1 :
+        for j in maxChild : 
+            if term[j].depth >= maxDepth :
+                maxDepth = term[j].depth
+                b = (math.log(depth_a))/(math.log(maxDepth)+1)
+    else :
+        b = 1
+
+    #Calculate IC
+    ic = k * a + (1-k) * b
+
+    return term_root, hypo_a, maxNode, depth_a, maxDepth, a, b, ic
