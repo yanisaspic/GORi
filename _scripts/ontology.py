@@ -6,6 +6,7 @@ Functions related to ontology managing.
 """
 
 import math
+from colorutils import Color
 from goatools import obo_parser
 
 def save_as_obo(dictio, filename, header):
@@ -71,7 +72,7 @@ def get_term_ontology(term_id, ontologies):
 
     # Usage
     >>> onto = {
-        'GO': obo_parser.GODag("go.obo", optional_attrs = "relationship"),
+        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
         'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
     >>> print(len(get_term_ontology("GO:0005524", onto)))
     ... 47284
@@ -90,7 +91,7 @@ def get_term_ends(term_id, ontologies, roots = False):
 
     # Usage
     >>> onto = {
-        'GO': obo_parser.GODag("go.obo", optional_attrs = "relationship"),
+        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
         'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
     >>> print(get_term_ends('GO:0031424', onto))
     ... {'GO:1905716', 'GO:1905717'}
@@ -137,7 +138,7 @@ def get_one_intrinsic_IC_Sanchez(term_id, ontologies, max_leaves = {}):
 
     # Usage
     >>> onto = {
-        'GO': obo_parser.GODag("go.obo", optional_attrs = "relationship"),
+        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
         'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
     >>> print(get_one_intrinsic_IC('GO:0009913', onto))
     ... 8.3, {'GO:0008150': 12086}
@@ -170,11 +171,12 @@ def get_one_intrinsic_IC_Sanchez(term_id, ontologies, max_leaves = {}):
     IC = round(-math.log(numerator/denominator), 2)
     return IC, max_leaves
 
-def get_all_intrinsic_IC(terms_ids, ontologies):
+def get_all_intrinsic_IC_and_labels(terms_ids, ontologies, index = 'Sanchez', k = 0):
     """
     # Description
     Returns the relative IC content of ontology terms according to their features in the
     ontology. The IC are returned in a dict with terms ids as keys and values in [0, 1].
+    Returns the human readables labels of the terms also.
 
     # Arguments
     ``terms_ids`` (list of strings): the unique and stable identifier of an ontology term. \n
@@ -183,33 +185,108 @@ def get_all_intrinsic_IC(terms_ids, ontologies):
 
     # Usage
     >>> onto = {
-        'GO': obo_parser.GODag("go.obo", optional_attrs = "relationship"),
+        'GO': obo_parser.GODag("go-basic.obo", optional_attrs = "relationship"),
         'R-': obo_parser.GODag("reactome.obo", optional_attrs = "relationship")}
     >>> terms = [
         "GO:0031424", "GO:0009888", "GO:0008150", 
         "R-HSA-9709957", "R-HSA-975634", "R-HSA-6806667"]
-    >>> print(get_all_intrinsic_IC(terms, onto))
+    >>> IC, labels = get_all_intrinsic_IC_and_labels(terms, onto)
+    >>> print(IC)
     ... {'GO:0031424': 1.0, 'GO:0009888': 0.44, 'GO:0008150': -0.0, 'R-HSA-9709957': -0.0, 
     'R-HSA-975634': 0.46, 'R-HSA-6806667': 1.0}
+    >>> print(labels)
+    ... {'GO:0031424': 'keratinization', 'GO:0009888': 'tissue development', 
+    'GO:0008150': 'biological_process', 'R-HSA-9709957': 'Sensory Perception', 
+    'R-HSA-975634': 'Retinoid metabolism and transport', 
+    'R-HSA-6806667': 'Metabolism of fat-soluble vitamins'}
     """
     all_max_leaves = {}
     max_int_IC = {}
     int_IC = {}
+    labels = {}
     for term_prefix in ontologies.keys():
         max_int_IC[term_prefix] = 0
     
     # calculate the IC values
-    for term in terms_ids:
-        term_prefix = term[:2]
-        term_IC, max_leaves = get_one_intrinsic_IC_Sanchez(term, ontologies, all_max_leaves)
+    for tid in terms_ids:
+        term_prefix = tid[:2]
+        if index == 'Sanchez':
+            term_IC, max_leaves = get_one_intrinsic_IC_Sanchez(tid, ontologies, all_max_leaves)
+        if index == 'Zhou':
+            term_IC = get_one_intrinsic_IC_Zhou(tid, ontologies, k)
         all_max_leaves.update(max_leaves)
-        int_IC[term] = term_IC
+        int_IC[tid] = term_IC
 
         if term_IC > max_int_IC[term_prefix]:
             max_int_IC[term_prefix] = term_IC
 
     # divide them by the maximal value of the ontology
-    for term in int_IC.keys():
-        term_prefix = term[:2]
-        int_IC[term] = round(int_IC[term] / max_int_IC[term_prefix], 2)
-    return int_IC
+    for term_id in int_IC.keys():
+        term_prefix = term_id[:2]
+        int_IC[term_id] = round(int_IC[term_id] / max_int_IC[term_prefix], 2)
+
+        # get the human readable label
+        source = get_term_ontology(term_id, ontologies)
+        term = source[term_id]
+        labels[term_id] = term.name
+
+    return int_IC, labels
+
+def prune_rules(rules, ontologies):
+    """
+    # Description
+    Removes rules if a similar rule but with a deeper child term instead has been found.
+
+    # Arguments
+    ``rules`` (df): association rules with a body and a head. \n
+    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters 
+    as keys.
+
+    # Usage
+    >>> df = pd.DataFrame({'body': ['GO:0002755, 'GO:0002764, 'GO:0006955', 'GO:0000165'],
+    'head': ['R-HSA-445095', 'R-HSA-445095', 'R-HSA-445095', 'R-HSA-445095']})
+    >>> ontologies = ontologies = {
+    'GO': obo_parser.GODag('go-basic.obo', optional_attrs="relationship"), 
+    'R-': obo_parser.GODag('reactome.obo', optional_attrs="relationship")
+    }
+    >>> print(prune_rules(df, ontologies))
+    ... body          head
+    0  GO:0002755  R-HSA-445095
+    3  GO:0000165  R-HSA-445095
+    """
+    rules_bodies = set(rules['body'])
+
+    for body in rules_bodies:
+
+        rules_with_body = rules.loc[rules['body'] == body]
+        if len(rules_with_body) > 0:
+
+            # get the ontology parent terms of the body
+            source = get_term_ontology(body, ontologies)
+            term = source[body]
+            parent_terms = term.get_all_upper()
+
+            # get the heads associated with this body
+            body_heads = list(rules_with_body['head'])
+
+            # if a rule has a parent term as a body with a similar head, delete it
+            rules = rules.drop(rules[ ( rules['body'].isin(parent_terms) ) &
+                ( rules['head'].isin(body_heads) ) ].index)
+            
+            # for one body, if a rule has the parent term of an other one as a head, remove it
+            heads_rules_to_ignore = set()
+
+            for head in body_heads:
+
+                # get the ontology parent terms of the head
+                source = get_term_ontology(head, ontologies)
+                term = source[head]
+                parent_terms = term.get_all_upper()
+
+                found_parents = parent_terms.intersection(set(body_heads))
+                heads_rules_to_ignore.update(found_parents)
+            
+            rules = rules.drop(rules[ ( rules['body'] == body ) &
+                ( rules['head'].isin(heads_rules_to_ignore) ) ].index)
+
+    return rules

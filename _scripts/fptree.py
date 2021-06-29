@@ -10,8 +10,8 @@ import time as tm
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpa
 from treelib import Node, Tree
-from colorutils import Color
 from collections import Counter, OrderedDict
+from mpl_toolkits.mplot3d import Axes3D
 
 class NodeData():
     """Data stored inside a node of the FP tree : node frequency and term weight."""
@@ -22,7 +22,7 @@ class NodeData():
     def __repr__(self):
         return 'freq: %s, weight: %s' % (self.freq, self.weight)
 
-def get_item_metrics(trans_db, item_weights):
+def get_items_metrics(trans_db, item_weights, item_labels):
     """
     # Description
     Returns a data frame containing the frequencies and weights of every item.
@@ -31,6 +31,7 @@ def get_item_metrics(trans_db, item_weights):
     ``trans_db`` (list of sublists): your transaction database. A sublist is a transaction with its 
     items. \n
     ``item_weights`` (dict): the items names as keys and their weights as values. \n
+    ``item_labels`` (dict): the items names as keys and their labels as values.
 
     # Usage
     >>> trans = [
@@ -41,19 +42,21 @@ def get_item_metrics(trans_db, item_weights):
             ["D", "A"]
         ]
     >>> weights = {'A': 0.5, 'B': 0.3, 'C':0.9, 'D': 0.7, 'E': 0.1, 'Y': 1}
-    >>> item_metrics = get_item_metrics(trans, weights)
-    >>> print(item_metrics)
-    ...     item  freq  weight
-        0    A   0.6     0.5
-        1    C   0.4     0.9
-        2    B   0.6     0.3
-        3    D   0.8     0.7
-        4    E   0.4     0.1
-        5    Y   0.2     1.0
+    >>> labels = {'A': 'Alpha', 'B': 'Beta', 'C': 'Gamma', 'D': 'Delta', 'E': 'Episode', 'Y': 'Yahtzee'}
+    >>> items_metrics = get_items_metrics(trans, weights, labels)
+    >>> print(items_metrics)
+    ... item  freq  weight    label
+    0    A   0.6     0.5    Alpha
+    1    C   0.4     0.9    Gamma
+    2    B   0.6     0.3     Beta
+    3    D   0.8     0.7    Delta
+    4    E   0.4     0.1  Episode
+    5    Y   0.2     1.0  Yahtzee
     """
     # ordered dicts are used to correctly align the frequencies and the weights values.
     ordered_item_freqs = OrderedDict()
     ordered_item_weights = OrderedDict()
+    ordered_item_labels = OrderedDict()
     total_trans = len(trans_db)
 
     # get terms relative frequencies
@@ -61,21 +64,23 @@ def get_item_metrics(trans_db, item_weights):
         for item in t:
             ordered_item_freqs[item] = ordered_item_freqs.get(item, 0) + 1 / total_trans
             ordered_item_weights[item] = ordered_item_weights.get(item, item_weights[item])
+            ordered_item_labels[item] = ordered_item_labels.get(item, item_labels[item])
 
-    item_metrics = pd.DataFrame(
+    items_metrics = pd.DataFrame(
         {'item': list(ordered_item_freqs.keys()), 
         'freq': list(ordered_item_freqs.values()), 
-        'weight': list(ordered_item_weights.values())})
-    return item_metrics
+        'weight': list(ordered_item_weights.values()),
+        'label': list(ordered_item_labels.values())})
+    return items_metrics
 
-def filter_frequency_and_weight(item_metrics, min_item_freq, min_item_weight):
+def filter_frequency_and_weight(items_metrics, min_item_freq, min_item_weight):
     """
     # Description
     Filters out all the frequencies and weights below their respective threshold values and 
     orders the remaining ones descendingly (frequence) then ascendingly (alphabetically).
 
     # Arguments
-    ``item_metrics`` (df): the items names, their weights and their frequencies. \n
+    ``items_metrics`` (df): the items names, their weights and their frequencies. \n
     ``min_item_freq`` (float): the minimum frequency necessary to keep an item. 0 < min_item_freq <= 1. \n
     ``min_item_weight`` (float): the minimum weight necessary to keep an item. 0 <= min_item_freq <= 1. 
 
@@ -88,27 +93,27 @@ def filter_frequency_and_weight(item_metrics, min_item_freq, min_item_weight):
             ["D", "A"]
         ]
     >>> weights = {'A': 0.5, 'B': 0.3, 'C':0.9, 'D': 0.7, 'E': 0.1, 'Y': 1}
-    >>> item_metrics = get_item_metrics(trans, weights)
-    >>> item_metrics = filter_frequency_and_weight(item_metrics, 0.25, 0.5)
-    >>> print(item_metrics)
+    >>> items_metrics = get_items_metrics(trans, weights)
+    >>> items_metrics = filter_frequency_and_weight(items_metrics, 0.25, 0.5)
+    >>> print(items_metrics)
     ...     item  freq  weight
         3    D   0.8     0.7
         0    A   0.6     0.5
         1    C   0.4     0.9
     """
-    item_metrics = item_metrics[item_metrics['freq'] >= min_item_freq]
-    item_metrics = item_metrics[item_metrics['weight'] >= min_item_weight]
-    item_metrics = item_metrics.sort_values(by=['freq', 'item'], ascending=[False, True])
-    return item_metrics
+    items_metrics = items_metrics[items_metrics['freq'] >= min_item_freq]
+    items_metrics = items_metrics[items_metrics['weight'] >= min_item_weight]
+    items_metrics = items_metrics.sort_values(by=['freq', 'item'], ascending=[False, True])
+    return items_metrics
 
-def order_transaction(ti, item_metrics):
+def order_transaction(ti, items_metrics):
     """
     # Description
     Orders a transaction according to the frequency values of the items.
 
     # Arguments
     ``ti`` (list): a transaction. Each element of the list is an item. \n
-    ``item_metrics`` (df): the items names, their weights and their frequencies.
+    ``items_metrics`` (df): the items names, their weights and their frequencies.
 
     # Usage
     >>> trans = [
@@ -119,16 +124,16 @@ def order_transaction(ti, item_metrics):
             ["D", "A"]
         ]
     >>> weights = {'A': 0.5, 'B': 0.3, 'C':0.9, 'D': 0.7, 'E': 0.1, 'Y': 1}
-    >>> item_metrics = get_item_metrics(trans, weights)
-    >>> item_metrics = filter_frequency_and_weight(item_metrics, 0.25, 0.5)
-    >>> print(order_transaction(trans[0], item_metrics))
+    >>> items_metrics = get_items_metrics(trans, weights)
+    >>> items_metrics = filter_frequency_and_weight(items_metrics, 0.25, 0.5)
+    >>> print(order_transaction(trans[0], items_metrics))
     ... ['D', 'A', 'C']
     """
-    order = list(item_metrics['item'])
+    order = list(items_metrics['item'])
     freq_ti = [x for x in ti if x in order]
     return sorted(freq_ti, key = order.index)
 
-def construct_fptree(trans_db, item_metrics):
+def construct_fptree(trans_db, items_metrics):
     """
     # Description
     Returns an FP tree with a dict of items names as keys and nodes ids (= nids) as values. 
@@ -136,7 +141,7 @@ def construct_fptree(trans_db, item_metrics):
     # Arguments
     ``trans_db`` (list of sublists): your transaction database. 
     A sublist is a transaction with its items. \n
-    ``item_metrics`` (df): the items names, their weights and their frequencies. \n
+    ``items_metrics`` (df): the items names, their weights and their frequencies. \n
 
     # Usage
     >>> trans = [
@@ -147,9 +152,9 @@ def construct_fptree(trans_db, item_metrics):
             ["D", "A"]
         ]
     >>> weights = {'A': 0.5, 'B': 0.3, 'C':0.9, 'D': 0.7, 'E': 0.1, 'Y': 1}
-    >>> item_metrics = get_item_metrics(trans, weights)
-    >>> item_metrics = filter_frequency_and_weight(item_metrics, 0.25, 0.5)
-    >>> tree, item_nodes = construct_fptree(trans, item_metrics)
+    >>> items_metrics = get_items_metrics(trans, weights)
+    >>> items_metrics = filter_frequency_and_weight(items_metrics, 0.25, 0.5)
+    >>> tree, item_nodes = construct_fptree(trans, items_metrics)
     >>> tree.show(idhidden=False)
     ... [0]
         ├── A[4]
@@ -180,7 +185,7 @@ def construct_fptree(trans_db, item_metrics):
     for ti in trans_db:
 
         parent_nid = 0  # root node
-        ti = order_transaction(ti, item_metrics)
+        ti = order_transaction(ti, items_metrics)
 
         for item in ti:
 
@@ -200,7 +205,7 @@ def construct_fptree(trans_db, item_metrics):
                     tag=item, identifier=new_nid, parent=parent_nid, 
                     data = NodeData(
                         1/total_trans, 
-                        item_metrics.loc[item_metrics['item'] == item, 'weight'].values[0])
+                        items_metrics.loc[items_metrics['item'] == item, 'weight'].values[0])
                 )
 
                 # generate a new unique nid and navigate to the new node
@@ -228,9 +233,9 @@ def get_branch(fptree, nid):
             ["D", "A"]
         ]
     >>> weights = {'A': 0.5, 'B': 0.3, 'C':0.9, 'D': 0.7, 'E': 0.1, 'Y': 1}
-    >>> item_metrics = get_item_metrics(trans, weights)
-    >>> item_metrics = filter_frequency_and_weight(item_metrics, 0.25, 0.5)
-    >>> tree, item_nodes = construct_fptree(trans, item_metrics)
+    >>> items_metrics = get_items_metrics(trans, weights)
+    >>> items_metrics = filter_frequency_and_weight(items_metrics, 0.25, 0.5)
+    >>> tree, item_nodes = construct_fptree(trans, items_metrics)
     >>> print(get_branch(tree, 3))
     ... {'A': 0.2, 'D': 0.2}
     """
@@ -273,7 +278,7 @@ def get_condition_tree(item, fptree, item_nodes):
         cond_tree += Counter(get_branch(fptree, nid))
     return cond_tree
 
-def get_rules_metrics(fptree, item_nodes, item_metrics):
+def get_rules_metrics(fptree, item_nodes, items_metrics):
     """
     # Description
     Returns the associtation rules and their metrics by reading the FPtree.
@@ -282,7 +287,7 @@ def get_rules_metrics(fptree, item_nodes, item_metrics):
     ``fptree`` (Tree Object): items nodes and their conditional frequencies stored in a treelib 
     Tree Object. \n
     ``item_nodes`` (dict): items tags and their respective nodes ids. \n
-    ``item_metrics`` (df): the items names, their weights and their frequencies. \n
+    ``items_metrics`` (df): the items names, their weights and their frequencies. \n
 
     # Usage
     >>> trans = [
@@ -293,10 +298,10 @@ def get_rules_metrics(fptree, item_nodes, item_metrics):
             ["D", "A"]
         ]
     >>> weights = {'A': 0.5, 'B': 0.3, 'C':0.9, 'D': 0.7, 'E': 0.1, 'Y': 1}
-    >>> item_metrics = get_item_metrics(trans, weights)
-    >>> item_metrics = filter_frequency_and_weight(item_metrics, 0.25, 0.5)
-    >>> tree, item_nodes = construct_fptree(trans, item_metrics)
-    >>> print(get_rules_metrics(tree, item_nodes, item_metrics))
+    >>> items_metrics = get_items_metrics(trans, weights)
+    >>> items_metrics = filter_frequency_and_weight(items_metrics, 0.25, 0.5)
+    >>> tree, item_nodes = construct_fptree(trans, items_metrics)
+    >>> print(get_rules_metrics(tree, item_nodes, items_metrics))
     ... body head      conf      lift  cover
     0    D    A  0.500000  1.041667    0.8
     1    A    C  0.333333  1.388889    0.6
@@ -304,13 +309,13 @@ def get_rules_metrics(fptree, item_nodes, item_metrics):
     """
     rules_metrics = []
 
-    for item in list(item_metrics['item'][1:]):
+    for item in list(items_metrics['item'][1:]):
         cond_tree = get_condition_tree(item, fptree, item_nodes)
         for parent_item in cond_tree.keys():
 
             # get the frequencies of the node and its parents to calculate quality metrics
-            parent_freq = item_metrics.loc[item_metrics['item'] == parent_item, 'freq'].values[0]
-            item_freq = item_metrics.loc[item_metrics['item'] == item, 'freq'].values[0]
+            parent_freq = items_metrics.loc[items_metrics['item'] == parent_item, 'freq'].values[0]
+            item_freq = items_metrics.loc[items_metrics['item'] == item, 'freq'].values[0]
 
             # confidence(Y => X) = S(x ∩ y) / S(y)
             confidence = cond_tree[parent_item] / parent_freq
@@ -324,16 +329,16 @@ def get_rules_metrics(fptree, item_nodes, item_metrics):
     rules_metrics = pd.DataFrame(rules_metrics)
     return rules_metrics
 
-def filter_confidence_and_lift(rules_metrics, min_rule_conf, min_rule_lift):
+def filter_confidence_and_lift(rules_metrics, min_rule_conf, min_rule_lift, min_rule_cover = 0):
     """
     # Description
-    Filters out all the confidences and lifts below their respective threshold values and 
+    Filters out all the rules with confidences and lifts below their respective threshold values and 
     orders the remaining ones descendingly (coverage) then ascendingly (alphabetically).
 
     # Arguments
     ``rules_metrics`` (df): association rules with a body, a head, confidence, lift and coverage values.
     ``min_rule_conf`` (float): the minimum confidence necessary to keep a rule. 0 < min_rule_conf <= 1. \n
-    ``min_lift_conf`` (float): the minimum lift necessary to keep a rule. 1 <= min_rule_lift <= +Inf.
+    ``min_rule_lify`` (float): the minimum lift necessary to keep a rule. 1 <= min_rule_lift <= +Inf. \n
 
     # Usage
     >>> rules_metrics = pd.DataFrame({'body': ['D', 'D', 'A', 'C'], 'head': ['A', 'C', 'F', 'F'],
@@ -345,6 +350,7 @@ def filter_confidence_and_lift(rules_metrics, min_rule_conf, min_rule_lift):
     """
     rules_metrics = rules_metrics[rules_metrics['conf'] >= min_rule_conf]
     rules_metrics = rules_metrics[rules_metrics['lift'] >= min_rule_lift]
+    rules_metrics = rules_metrics[rules_metrics['cover'] >= min_rule_cover]
     rules_metrics = rules_metrics.sort_values(by=['cover', 'body'], ascending=[True, True])
     return rules_metrics
 
@@ -379,117 +385,58 @@ def get_numeric_input(label, mini, maxi):
         var = get_numeric_input(label, mini, maxi)
     return float(var)
 
-def get_color_labels(terms_lists, colors = {
-    'R-': Color((255,0,0)), 
-    'HP': Color((0,255,0)), 
-    'GO': Color((0,0,255))
-    }):
+def get_scatterplot(
+    x, y, z = None, title = None, axes = ['x', 'y', 'z'], 
+    colors = 'Set1', mark = [".", "x", "o"]):
     """
     # Description
-    Returns a list corresponding to the sum of the ontologies colors.
-    e.g. for a list of 2 sublists, if the first element of the sublist is GO (blue) and HP (green),
-    the first element of the resulting colors list is cyan).
+    Returns a scatterplot object using 2 columns of a darame as x and y axes.
 
     # Arguments
-    ``terms_lists`` (list of sublists): a list of equally sized sublists.
-    ``rules_metrics`` (df): a dataframe with rules bodies and heads. \n
-    ``colors`` (dict of tuples): the color value corresponding to each prefix.
-
-    # Usage
-    >>> sub_list1 = ['GO:0001817', 'GO:0001817']
-    >>> sub_list2 = ['GO:0010628', 'HP:0011024']
-    >>> print(get_color_labels( [sub_list1, sub_list2] ))
-    ... ['#0000ff', '#00ffff']
-    """
-    summed_colors = []
-    len_subl = len(terms_lists[0])
-    for i in range(len_subl):
-        color_value = Color((0, 0, 0))
-        for subl in terms_lists:
-            term_prefix = subl[i][:2]
-            color_value += colors[term_prefix]
-        summed_colors.append(color_value.hex)
-    return summed_colors
-
-def get_scatterplot(data, xlab, ylab, title = None, colors = None, legend = None, mark = "."):
-    """
-    # Description
-    Returns a scatterplot object using 2 columns of a dataframe as x and y axes.
-
-    # Arguments
-    ``data`` (df): a pandas dataframe with at least 2 columns of values. \n
-    ``xlab`` (string): the name of the column you want to use as x values. \n
-    ``ylab`` (string): the name of the column you want to use as y values. \n
+    ``x`` (dict): category identifier as key and list of numeric as values. \n
+    ``y`` (dict): category identifier as key (same as x) and list of numeric as values. \n
+    ``z`` (dict): category identifier as key (same as x and y) and list of numeric as values (3D). \n
     ``title`` (string): the title of your scatterplot. \n
-    ``colors`` (list of strings): the ordered color labels corresponding to your points. \n
-    ``legend`` (dict): colors as keys and their significance as values. \n
-    ``marker`` (string): the appearance of your scatterplot points.
+    ``axes`` (list of strings): ordered names of the axes of the graph (x>y>z) \n
+    ``colors`` (string): the name of the colormap used to represent each category. \n
+    ``mark`` (list of strings): the markers used to represent each category.
 
     # Usage
-    >>> df = pd.DataFrame({'x': [0, 1, 2], 'y': [3, 4, 5]})
-    >>> scatter = get_scatterplot(
-    df, 'x', 'y', colors=['red', 'blue', 'green'], 
-    legend={'red':'A', 'blue':'B', 'green':'C'}, mark='v')
+    >>> x = {'A': [0, 1, 2], 'B': [5, 6, 7]}
+    >>> y = {'A': [0.2, 0.3, 0.1], 'B': [0.9, 1.2, 0.1]}
+    >>> z = {'A': [10, 11, 9], 'B': [3, 4, 8]}
+    >>> scatter = get_scatterplot(x, y, title='Demo 2D scatterplot')
+    >>> scatter.show()
+    >>> scatter = get_scatterplot(x, y, z, title='Demo 3D scatterplot')
     >>> scatter.show()
     """
-    plt.scatter(data[xlab], data[ylab], c=colors, marker=mark)
-    plt.xlabel(xlab)
-    plt.ylabel(ylab)
+    categories = list(x.keys())
     plt.title(title)
-    patches = []
-    for k in legend.keys():
-        patches.append(mpa.Patch(color=k, label=legend[k]))
-    plt.legend(handles=patches, loc='lower left')
+
+    if z is None:
+        layers = []
+        labels = []
+
+        for i in range(len(x)):
+            cat = categories[i]
+            labels.append(cat)
+            lay = plt.scatter(x[cat], y[cat], cmap=colors[i], marker=mark[i], alpha=0.33)
+            layers.append(lay)
+
+        plt.xlabel(axes[0])
+        plt.ylabel(axes[1])
+        plt.legend(layers, labels, loc='lower left', fancybox=True, shadow=True)
+
+    else:
+        mark = ["+", "x", "o"]
+        ax = plt.subplot(111, projection='3d')
+        for i in range(len(x)):
+            cat = categories[i]
+            ax.plot(x[cat], y[cat], z[cat], mark[i], cmap=colors[i], label=cat)
+
+        ax.set_xlabel(axes[0])
+        ax.set_ylabel(axes[1])
+        ax.set_zlabel(axes[2])
+        plt.legend(loc='lower left', fancybox=True, shadow=True)
+
     return plt
-
-def mine_rules_metrics(trans_db, item_weights):
-    """
-    # Description
-    Returns the frequent patterns found in a transaction database and metrics using an ordered FP tree.
-
-    # Arguments
-    ``trans_db`` (list of sublists): your transaction database. A sublist is a transaction with 
-    its items. \n
-    ``item_weights`` (dict): the items names as keys and their weights as values.
-
-    # Usage
-    >>> trans = [
-            ["A", "C", "B", "D"],
-            ["B", "E", "D"],
-            ["E", "B", "A"],
-            ["Y", "C", "D"],
-            ["D", "A"]
-        ]
-    >>> weights = {'A': 0.5, 'B': 0.3, 'C':0.9, 'D': 0.7, 'E': 0.1, 'Y': 1}
-    >>> print(mines_rules_metrics(trans, weights))
-    ... Please set a valid minimum frequency value (0 <= minimum frequency <= 1): 0.25
-    ... Please set a valid minimum weight value (0 <= minimum weight <= 1): 0.5
-    ... {
-        'D => A': {'conf': 0.5, 'lift': 1.0416666666666665, 'cover': 0.8}, 
-        'D => C': {'conf': 0.5, 'lift': 1.5624999999999998, 'cover': 0.8}
-        }
-    """
-    # get a frequency, weights dataframe for items
-    item_metrics = get_item_metrics(trans_db, item_weights)
-
-    # plot the metrics together
-    items = list(item_metrics['item'])
-    items_colors = get_color_labels( [items] )
-
-    items_plot = get_scatterplot(item_metrics, 'weight', 'freq', 
-    "Relative weights and frequencies of the ontologies terms", items_colors, 
-    {'#0000ff': 'Gene Ontology', '#ff0000': 'Reactome', '#00ff00': 'Human Phenotype Ontology'})
-    items_plot.show()
-
-    # set the threshold values
-    min_item_weight = get_numeric_input("minimum weight", 0, 1)
-    min_item_freq = get_numeric_input("minimum frequency", 0, 1)
-    item_metrics = filter_frequency_and_weight(item_metrics, min_item_freq, min_item_weight)
-
-    # construct the tree
-    tree, item_nodes = construct_fptree(trans_db, item_metrics)
-
-    # get a confidence, lift dataframe for rules with ascending coverage values
-    rules_metrics = get_rules_metrics(tree, item_nodes, item_metrics)
-
-    return rules_metrics

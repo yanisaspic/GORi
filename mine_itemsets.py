@@ -2,74 +2,16 @@
 For a given set of genes, identify the frequent itemsets involving multiple ontologies terms.
 """
 
+from _scripts import common as cmn, ontology as og, fptree as fp, analysis as ana
 from goatools import obo_parser
 from settings import *
 from math import inf
+from collections import OrderedDict
 
 import csv
 import json
 import time as tm
 import pandas as pd
-from _scripts import common as cmn, ontology as onto, fptree as fp
-
-def prune_rules(rules, ontologies):
-    """
-    # Description
-    Removes rules if a similar rule but with a deeper child term instead has been found.
-
-    # Arguments
-    ``rules`` (df): association rules with a body and a head. \n
-    ``ontologies`` (dict of GODag objects): ontologies as values and their terms' first 2 characters 
-    as keys.
-
-    # Usage
-    >>> df = pd.DataFrame({'body': ['GO:0002755, 'GO:0002764, 'GO:0006955', 'GO:0000165'],
-    'head': ['R-HSA-445095', 'R-HSA-445095', 'R-HSA-445095', 'R-HSA-445095']})
-    >>> ontologies = ontologies = {
-    'GO': obo_parser.GODag('go-basic.obo', optional_attrs="relationship"), 
-    'R-': obo_parser.GODag('reactome.obo', optional_attrs="relationship")
-    }
-    >>> print(prune_rules(df, ontologies))
-    ... body          head
-    0  GO:0002755  R-HSA-445095
-    3  GO:0000165  R-HSA-445095
-    """
-    rules_bodies = set(rules['body'])
-
-    for body in rules_bodies:
-
-        rules_with_body = rules.loc[rules['body'] == body]
-        if len(rules_with_body) > 0:
-
-            # get the ontology parent terms of the body
-            source = onto.get_term_ontology(body, ontologies)
-            term = source[body]
-            parent_terms = term.get_all_upper()
-
-            # get the heads associated with this body
-            body_heads = list(rules_with_body['head'])
-
-            # if a rule has a parent term as a body with a similar head, delete it
-            rules = rules.drop(rules[ ( rules['body'].isin(parent_terms) ) &
-                ( rules['head'].isin(body_heads) ) ].index)
-            
-            # for one body, if a rule has the parent term of an other one as a head, remove it
-            heads_rules_to_ignore = set()
-
-            for head in body_heads:
-
-                # get the ontology parent terms of the head
-                source = onto.get_term_ontology(head, ontologies)
-                term = source[head]
-                parent_terms = term.get_all_upper()
-
-                found_parents = parent_terms.intersection(set(body_heads))
-                heads_rules_to_ignore.update(found_parents)
-            
-            rules = rules.drop(rules[ ( rules['body'] == body ) &
-                ( rules['head'].isin(heads_rules_to_ignore) ) ].index)
-
-    return rules
 
 # - - - - - - - - -- - - - - - -- - - - - - -- - -- - - -- - -- - - -- - -- - -- - - -- - - -- - -  - - - -
 # - - - - - - - - -- - - - - - -- - - - - - -- - -- - - -- - -- - - -- - -- - -- - - -- - - -- - -  - - - -
@@ -131,50 +73,106 @@ ontology_terms_found = list(ontology_terms_found)
 
 end_load = tm.time()
 
-#_________________________________________ W E I G H T S  &  F R E Q S 
+#_________________________________________ I T E M I Z I N G
 
 #___________ Get the terms Information Content : 
 # ontology feature-based (intrinsic)
-intrinsic_IC = onto.get_all_intrinsic_IC(ontology_terms_found, ontologies)
+k = 0
+intrinsic_IC, labels = og.get_all_intrinsic_IC_and_labels(ontology_terms_found, ontologies, index = 'Zhou')
 
-end_weight = tm.time()
+# get a frequency, weights dataframe for items
+items_metrics = fp.get_items_metrics(transactions, intrinsic_IC, labels)
+
+# plot the metrics together
+frequencies = OrderedDict()
+weights = OrderedDict()
+for index, row in items_metrics.iterrows():
+    item_id = row['item'][:2]
+    weights[item_id] = weights.get(item_id, []) + [ row['weight'] ]
+    frequencies[item_id] = frequencies.get(item_id, []) + [ row['freq'] ]
+
+hist_weights = list(weights.values())
+hist_frequencies = list(frequencies.values())
+
+#######################################################################################################
+##### P L O T   T H E   W E I G H T S   I N   H I S T O G R A M S
+#####   - incorpore ta fonction d'histogrammes ici ^ (l96)
+#####   - utilise hist_weights et hist_frequenceis (2 listes de 3 sous-listes)
+#####   - fait varier k dans le get_weight_zhou (de 0 à 1) [l80]
+#####   - détermine si une valeur de k permet d'avoir des distributions similaires entre les ontologies
+#######################################################################################################
+
+scatter_items = fp.get_scatterplot(
+    weights, frequencies, axes=['weight', 'freq'],
+    title='Metrics of the ontology terms')
+scatter_items.show()
+
+# set the threshold values and filter
+min_item_weight = fp.get_numeric_input("minimum weight", 0, 1)
+min_item_freq = fp.get_numeric_input("minimum frequency", 0, 1)
+items_metrics = fp.filter_frequency_and_weight(items_metrics, min_item_freq, min_item_weight)
+
+end_item = tm.time()
 
 #_________________________________________ M I N I N G
 
-rules_metrics = fp.mine_rules_metrics(transactions, intrinsic_IC)
-print(len(rules_metrics))
+# construct the tree and extract rules metrics from it
+tree, item_nodes = fp.construct_fptree(transactions, items_metrics)
+rules_metrics = fp.get_rules_metrics(tree, item_nodes, items_metrics)
+
+end_mine = tm.time()
+
+#_________________________________________ P R U N I N G
 
 # filter out the rules involving a body and a head sharing a relationship in an ontology
 rules_metrics = rules_metrics[ 
     rules_metrics['body'].str[:2] != rules_metrics['head'].str[:2]
     ]
-print(len(rules_metrics))
-
-rules_metrics = prune_rules(rules_metrics, ontologies)
-print(len(rules_metrics))
+rules_metrics = og.prune_rules(rules_metrics, ontologies)
 
 # plot the metrics together
-bodies, heads = list(rules_metrics['body']), list(rules_metrics['head'])
-rules_colors = fp.get_color_labels( [bodies, heads] )
+confidences = OrderedDict()
+lifts = OrderedDict()
+coverages = OrderedDict()
+for index, row in rules_metrics.iterrows():
+    rule_elements = sorted([ row['body'][:2], row['head'][:2] ])
+    rule_id = " & ".join(rule_elements)
+    confidences[rule_id] = confidences.get(rule_id, []) + [ row['conf'] ]
+    lifts[rule_id] = lifts.get(rule_id, []) + [ row['lift'] ]
 
-rules_plot = fp.get_scatterplot(rules_metrics, 'conf', 'lift', 
-"Confidence and lift values of the frequent patterns mined", rules_colors,
-{'#ff00ff': 'GO + Reactome', '#00ffff': 'GO + HPO', '#ffff00': 'Reactome + HPO'})
-rules_plot.show()
-# set the threshold values
+scatter_rules = fp.get_scatterplot(
+    confidences, lifts, coverages, axes=['conf', 'lift'], title="Metrics of the association rules")
+scatter_rules.show()
+
+# set the threshold values and filter
 min_rule_conf = fp.get_numeric_input("minimum confidence", 0, 1)
-min_rule_lift = fp.get_numeric_input("minimum lift", 1, inf)
-# filter according to the thresholds
+min_rule_lift = fp.get_numeric_input("minimum lift", 0, inf)
 rules_metrics = fp.filter_confidence_and_lift(rules_metrics, min_rule_conf, min_rule_lift)
-print(len(rules_metrics))
 
-end_min = tm.time()
+end_prune = tm.time()
+
+#_________________________________________ E X P O R T
+
+# export the items and rules metrics used to draw a network
+
+items_metrics = items_metrics.drop(columns=['weight'])
+items_metrics.to_csv(items_file, index=False, header=True)
+rules_metrics = rules_metrics.drop(columns=['cover'])
+rules_metrics.to_csv(rules_file, index=False, header=True)
+
+end_exp = tm.time()
 
 print("\nitemset mining completed in %s seconds:\n \
     .loading: %ss\n \
-    .weighting: %ss\n \
-    .mining: %ss\n" % (
-        (end_min - begin), 
-        (end_load - begin),
-        (end_weight - end_load),
-        (end_min - end_weight)))
+    .itemizing: %ss\n \
+    .mining: %ss\n \
+    .pruning: %ss\n \
+    .export: %ss\n" % (
+        round(end_prune - begin, 1), 
+        round(end_load - begin, 1),
+        round(end_item - end_load, 1),
+        round(end_mine - end_item, 1),
+        round(end_prune - end_mine, 1),
+        round(end_exp - end_prune, 1)
+        )
+    )

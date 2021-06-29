@@ -1,0 +1,8 @@
+### The post-mining data and the figures are saved in this folder. ###
+
+# Networks
+*.png
+*.jpg
+
+# Working files
+*.csv

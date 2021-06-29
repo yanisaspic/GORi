@@ -164,7 +164,7 @@ for gene_id in species_genes:
                 term = source[leafid]
 
                 # for the Gene Ontology, only keep the terms from the aspects of interest
-                if id(source) == id(ontologies['GO']) and term.namespace not in aspect:
+                if id(source) == id(ontologies['GO']) and term.namespace not in target_aspect:
                     continue
                 n_valid_leafid += 1
 
@@ -207,7 +207,9 @@ print("\ndata preparation completed in %s seconds:\n \
     .downloading: %ss\n \
     .loading: %ss\n \
     .exporting: %ss\n"  % (
-        (end_exp - begin), 
-        (end_dl - begin), 
-        (end_load - end_dl),
-        (end_exp - end_load)))
+        round(end_exp - begin, 1), 
+        round(end_dl - begin, 1), 
+        round(end_load - end_dl, 1),
+        round(end_exp - end_load, 1)
+        )
+    )

@@ -25,13 +25,14 @@ symbol = True
 
 ## data relative path:
 data_path = "./data"
+results_path = "./results"
 
 ## URLs to download data files from and their respective resulting files:
 # gaf file is downloaded automatically by a function call.
 gaf_file = "%s/goa_%s.gaf" % (data_path, species)
 
 go_obo_url = "http://current.geneontology.org/ontology/go-basic.obo"
-go_obo_file = "%s/go.obo" % data_path
+go_obo_file = "%s/go-basic.obo" % data_path
 
 reactome_hierarchy_url = "https://reactome.org/download/current/ReactomePathwaysRelation.txt"
 reactome_hierarchy_file = "%s/reactome_hierarchy.txt" % data_path
@@ -50,3 +51,7 @@ hpo_annotation_file = "%s/hpo_annotation.txt" % data_path
 
 hpo_obo_url = "http://purl.obolibrary.org/obo/hp.obo"
 hpo_obo_file = "%s/hp.obo" % data_path
+
+# results files
+items_file = "%s/items.csv" % results_path
+rules_file = "%s/rules.csv" % results_path
