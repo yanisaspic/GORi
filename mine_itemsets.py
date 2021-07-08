@@ -78,8 +78,12 @@ end_load = tm.time()
 #___________ Get the terms Information Content : 
 # ontology feature-based (intrinsic)
 k = 0
+<<<<<<< HEAD
 intrinsic_IC, labels = og.get_all_intrinsic_IC_and_labels(
     ontology_terms_found, ontologies, index = 'Sanchez')
+=======
+intrinsic_IC, labels = og.get_all_intrinsic_IC_and_labels(ontology_terms_found, ontologies, index = 'Zhou', k)
+>>>>>>> 86ff613f75839b87f3ce4bf8389668205fc83233
 
 # get a frequency, weights dataframe for items
 items_metrics = fp.get_items_metrics(transactions, intrinsic_IC, labels)
