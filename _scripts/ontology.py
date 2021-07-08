@@ -204,6 +204,7 @@ def get_all_intrinsic_IC_and_labels(terms_ids, ontologies, index = 'Sanchez', k 
     max_int_IC = {}
     int_IC = {}
     labels = {}
+    
     for term_prefix in ontologies.keys():
         max_int_IC[term_prefix] = 0
     

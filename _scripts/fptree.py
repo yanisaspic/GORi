@@ -58,6 +58,7 @@ def get_items_metrics(trans_db, item_weights, item_labels):
     ordered_item_weights = OrderedDict()
     ordered_item_labels = OrderedDict()
     total_trans = len(trans_db)
+    test = []
 
     # get terms relative frequencies
     for t in trans_db:
@@ -93,7 +94,8 @@ def filter_frequency_and_weight(items_metrics, min_item_freq, min_item_weight):
             ["D", "A"]
         ]
     >>> weights = {'A': 0.5, 'B': 0.3, 'C':0.9, 'D': 0.7, 'E': 0.1, 'Y': 1}
-    >>> items_metrics = get_items_metrics(trans, weights)
+    >>> labels = {'A': 'Alpha', 'B': 'Beta', 'C': 'Gamma', 'D': 'Delta', 'E': 'Episode', 'Y': 'Yahtzee'}
+    >>> items_metrics = get_items_metrics(trans, weights, labels)
     >>> items_metrics = filter_frequency_and_weight(items_metrics, 0.25, 0.5)
     >>> print(items_metrics)
     ...     item  freq  weight
@@ -101,8 +103,14 @@ def filter_frequency_and_weight(items_metrics, min_item_freq, min_item_weight):
         0    A   0.6     0.5
         1    C   0.4     0.9
     """
-    items_metrics = items_metrics[items_metrics['freq'] >= min_item_freq]
-    items_metrics = items_metrics[items_metrics['weight'] >= min_item_weight]
+    if min_item_freq < 0:
+        items_metrics = items_metrics[items_metrics['freq'] <= -min_item_freq]
+    else:
+        items_metrics = items_metrics[items_metrics['freq'] >= min_item_freq]
+    if min_item_weight < 0:
+        items_metrics = items_metrics[items_metrics['weight'] <= -min_item_weight]
+    else:
+        items_metrics = items_metrics[items_metrics['weight'] >= min_item_weight]
     items_metrics = items_metrics.sort_values(by=['freq', 'item'], ascending=[False, True])
     return items_metrics
 
@@ -244,7 +252,8 @@ def get_branch(fptree, nid):
     pattern_frequency = leaf_node.data.freq
     parent_node = fptree.get_node(leaf_node.predecessor(fptree._identifier))
     while parent_node.predecessor(fptree._identifier) != None:
-        branch[parent_node.tag] = pattern_frequency
+        if leaf_node.tag[:2] != parent_node.tag[:2]:
+            branch[parent_node.tag] = pattern_frequency
         parent_node = fptree.get_node(parent_node.predecessor(fptree._identifier))
     return branch
 
@@ -278,6 +287,40 @@ def get_condition_tree(item, fptree, item_nodes):
         cond_tree += Counter(get_branch(fptree, nid))
     return cond_tree
 
+def get_rule(pattern_freq, body_row, head_row):
+    """
+    # Description
+    Returns a rule as a dictionary with a body, a head, a confidence, a lift and a coverage value.
+
+    # Arguments
+    ``pattern_freq`` (float): the frequency of a 2-items frequent pattern. \n
+    ``body_row`` (df): the frequency dataframe row of the item considered as body. \n
+    ``head_row`` (df): the frequency dataframe row of the item considered as head.
+
+    # Usage
+    >>> items_freq = pd.DataFrame({
+        'item': ['A', 'B', 'C', 'D'], 'freq': [0.2, 0.4, 0.5, 0.6]
+    })
+    >>> B_row, C_row = items_freq[items_freq['item'] == 'B'], items_freq[items_freq['item'] == 'C']
+    >>> freq_BC_pattern = 0.3
+    >>> print( get_rule(freq_BC_pattern, B_row, C_row) )
+    ... {'body': 'B', 'head': 'C', 'conf': 0.7499999999999999, 'lift': 3.749999999999999, 'cover': 0.4}
+    >>> print( get_rule(freq_BC_pattern, C_row, B_row) )
+    ... {'body': 'C', 'head': 'B', 'conf': 0.6, 'lift': 2.9999999999999996, 'cover': 0.5}
+    """
+    body_id, body_freq = body_row['item'].values[0], body_row['freq'].values[0]
+    head_id, head_freq = head_row['item'].values[0], head_row['freq'].values[0]
+
+    # confidence(Y => X) = S(X ∩ Y) / S(Y)
+    confidence = pattern_freq / body_freq
+    # lift(Y => X) = conf(Y => X) / S(X)
+    lift = confidence / head_freq
+
+    rule = {
+        'body': body_id, 'head': head_id, 
+        'conf': confidence, 'lift': lift, 'cover': body_freq}
+    return rule
+
 def get_rules_metrics(fptree, item_nodes, items_metrics):
     """
     # Description
@@ -298,38 +341,41 @@ def get_rules_metrics(fptree, item_nodes, items_metrics):
             ["D", "A"]
         ]
     >>> weights = {'A': 0.5, 'B': 0.3, 'C':0.9, 'D': 0.7, 'E': 0.1, 'Y': 1}
-    >>> items_metrics = get_items_metrics(trans, weights)
+    >>> labels = {'A': 'Alpha', 'B': 'Beta', 'C': 'Gamma', 'D': 'Delta', 'E': 'Episode', 'Y': 'Yahtzee'}
+    >>> items_metrics = get_items_metrics(trans, weights, labels)
     >>> items_metrics = filter_frequency_and_weight(items_metrics, 0.25, 0.5)
     >>> tree, item_nodes = construct_fptree(trans, items_metrics)
     >>> print(get_rules_metrics(tree, item_nodes, items_metrics))
     ... body head      conf      lift  cover
     0    D    A  0.500000  1.041667    0.8
-    1    A    C  0.333333  1.388889    0.6
-    2    D    C  0.500000  1.562500    0.8
+    1    A    D  0.666667  1.388889    0.6
+    2    A    C  0.333333  1.388889    0.6
+    3    C    A  0.500000  2.083333    0.4
+    4    D    C  0.500000  1.562500    0.8
+    5    C    D  1.000000  3.125000    0.4
     """
     rules_metrics = []
 
     for item in list(items_metrics['item'][1:]):
+
         cond_tree = get_condition_tree(item, fptree, item_nodes)
+
         for parent_item in cond_tree.keys():
 
             # get the frequencies of the node and its parents to calculate quality metrics
-            parent_freq = items_metrics.loc[items_metrics['item'] == parent_item, 'freq'].values[0]
-            item_freq = items_metrics.loc[items_metrics['item'] == item, 'freq'].values[0]
+            parent_row = items_metrics[items_metrics['item'] == parent_item]
+            item_row = items_metrics[items_metrics['item'] == item]
+            parent_U_item_freq = cond_tree[parent_item]
 
-            # confidence(Y => X) = S(x ∩ y) / S(y)
-            confidence = cond_tree[parent_item] / parent_freq
-            # lift(Y => X) = conf(Y => X) / S(X) * S(Y)
-            lift = confidence / (item_freq * parent_freq)
-
-            rules_metrics.append(
-                {'body': parent_item, 'head': item, 
-                'conf': confidence, 'lift': lift, 'cover': parent_freq})
+            rules_metrics.extend([
+                get_rule(parent_U_item_freq, parent_row, item_row),
+                get_rule(parent_U_item_freq, item_row, parent_row)
+            ])
 
     rules_metrics = pd.DataFrame(rules_metrics)
     return rules_metrics
 
-def filter_confidence_and_lift(rules_metrics, min_rule_conf, min_rule_lift, min_rule_cover = 0):
+def filter_confidence_and_lift(rules_metrics, min_rule_conf, min_rule_lift):
     """
     # Description
     Filters out all the rules with confidences and lifts below their respective threshold values and 
@@ -338,7 +384,7 @@ def filter_confidence_and_lift(rules_metrics, min_rule_conf, min_rule_lift, min_
     # Arguments
     ``rules_metrics`` (df): association rules with a body, a head, confidence, lift and coverage values.
     ``min_rule_conf`` (float): the minimum confidence necessary to keep a rule. 0 < min_rule_conf <= 1. \n
-    ``min_rule_lify`` (float): the minimum lift necessary to keep a rule. 1 <= min_rule_lift <= +Inf. \n
+    ``min_rule_lift`` (float): the minimum lift necessary to keep a rule. 1 <= min_rule_lift <= +Inf. \n
 
     # Usage
     >>> rules_metrics = pd.DataFrame({'body': ['D', 'D', 'A', 'C'], 'head': ['A', 'C', 'F', 'F'],
@@ -348,9 +394,14 @@ def filter_confidence_and_lift(rules_metrics, min_rule_conf, min_rule_lift, min_
     0    D    A   0.5   1.0    0.8
     1    D    C   0.5   1.6    0.8
     """
-    rules_metrics = rules_metrics[rules_metrics['conf'] >= min_rule_conf]
-    rules_metrics = rules_metrics[rules_metrics['lift'] >= min_rule_lift]
-    rules_metrics = rules_metrics[rules_metrics['cover'] >= min_rule_cover]
+    if min_rule_conf < 0:
+        rules_metrics = rules_metrics[rules_metrics['conf'] <= -min_rule_conf]
+    else:
+        rules_metrics = rules_metrics[rules_metrics['conf'] >= min_rule_conf]
+    if min_rule_lift < 0:
+        rules_metrics = rules_metrics[rules_metrics['lift'] <= -min_rule_lift]
+    else:
+        rules_metrics = rules_metrics[rules_metrics['lift'] >= min_rule_lift]
     rules_metrics = rules_metrics.sort_values(by=['cover', 'body'], ascending=[True, True])
     return rules_metrics
 
@@ -361,8 +412,8 @@ def get_numeric_input(label, mini, maxi):
     is invalid.
 
     # Arguments
-    ``label`` (string): a label corresponding to the variable you expect.
-    ``mini`` (float): the lowest threshold value.
+    ``label`` (string): a label corresponding to the variable you expect. \n
+    ``mini`` (float): the lowest threshold value. \n
     ``maxi`` (float): the highest threshold value.
 
     # Usage
@@ -375,19 +426,29 @@ def get_numeric_input(label, mini, maxi):
     >>> print(score)
     ... 10
     """
-    var = input("Please set a valid %s value (%s <= %s <= %s): " % (label, mini, label, maxi))
+    print("\n## You can add a minus (e.g. -0.1) to input a maximal %s value instead (%s <= 0.1)."
+        % (label, label) )
+    var = input("Please set a valid minimal %s value (%s <= %s <= %s): " % (
+        label, mini, label, maxi))
+    negative = False
     try:
-        if float(var) < mini or float(var) > maxi:
+        var = float(var)
+        if var < 0:
+            negative = True
+            var = -var
+        if var < mini or var > maxi:
             print("Wrong input: out of limits value.")
             var = get_numeric_input(label, mini, maxi)
     except ValueError:
         print("Wrong input: non numeric value.")
         var = get_numeric_input(label, mini, maxi)
-    return float(var)
+    if negative:
+        var = -var
+    return var
 
 def get_scatterplot(
     x, y, z = None, title = None, axes = ['x', 'y', 'z'], 
-    colors = 'Set1', mark = [".", "x", "o"]):
+    colors = 'Set1', mark = ["*", ".", "p"]):
     """
     # Description
     Returns a scatterplot object using 2 columns of a darame as x and y axes.
@@ -420,7 +481,7 @@ def get_scatterplot(
         for i in range(len(x)):
             cat = categories[i]
             labels.append(cat)
-            lay = plt.scatter(x[cat], y[cat], cmap=colors[i], marker=mark[i], alpha=0.33)
+            lay = plt.scatter(x[cat], y[cat], cmap=colors, marker=mark[i], alpha=0.5)
             layers.append(lay)
 
         plt.xlabel(axes[0])
@@ -428,11 +489,10 @@ def get_scatterplot(
         plt.legend(layers, labels, loc='lower left', fancybox=True, shadow=True)
 
     else:
-        mark = ["+", "x", "o"]
         ax = plt.subplot(111, projection='3d')
         for i in range(len(x)):
             cat = categories[i]
-            ax.plot(x[cat], y[cat], z[cat], mark[i], cmap=colors[i], label=cat)
+            ax.plot(x[cat], y[cat], z[cat], mark[i], cmap=colors, label=cat)
 
         ax.set_xlabel(axes[0])
         ax.set_ylabel(axes[1])

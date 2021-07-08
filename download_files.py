@@ -20,7 +20,7 @@ from goatools import obo_parser, associations, semantic
 from Bio.UniProt.GOA import gafiterator
 from settings import *
 from collections import OrderedDict
-from _scripts import ontology as onto, uniprot as up, common as cmn, reactome as rc, hpo
+from _scripts import ontology as onto, misc
 
 import time as tm
 import pandas as pd
@@ -63,15 +63,15 @@ def calculate_term_IC(terms_count, annotations_count):
 begin = tm.time()
 
 associations.dnld_annotation(gaf_file)
-cmn.replace_first_line(gaf_file, "!gaf-version: 2.1\n")
-cmn.download_url(go_obo_url, go_obo_file)
-cmn.download_url(reactome_hierarchy_url, reactome_hierarchy_file)
-cmn.download_url(reactome_label_url, reactome_label_file)
-cmn.download_url(reactome_annotation_url, reactome_annotation_file)
+misc.replace_first_line(gaf_file, "!gaf-version: 2.1\n")
+misc.download_url(go_obo_url, go_obo_file)
+misc.download_url(reactome_hierarchy_url, reactome_hierarchy_file)
+misc.download_url(reactome_label_url, reactome_label_file)
+misc.download_url(reactome_annotation_url, reactome_annotation_file)
 
 if species == "human":
-    cmn.download_replace_first(hpo_annotation_url, hpo_annotation_file, "")
-    cmn.download_url(hpo_obo_url, hpo_obo_file)
+    misc.download_replace_first(hpo_annotation_url, hpo_annotation_file, "")
+    misc.download_url(hpo_obo_url, hpo_obo_file)
 
 end_dl = tm.time()
 
@@ -95,12 +95,12 @@ gene_go_annotation['n_genes_with_annotations'] = len(gene_go_annotation)
 go_onto = obo_parser.GODag(go_obo_file)
 
 ## REACTOME ANNOTATIONS
-gene_reactome_annotation = rc.load_reactome_annotation(reactome_annotation_file)
+gene_reactome_annotation = misc.load_reactome_annotation(reactome_annotation_file)
 species_genes.update(set(gene_reactome_annotation.keys()))
 gene_reactome_annotation['n_genes_with_annotations'] = len(gene_reactome_annotation)
 
 ## REACTOME ONTOLOGY
-reacterm = rc.load_reacterm_dict(reactome_hierarchy_file, reactome_label_file)
+reacterm = misc.load_reacterm_dict(reactome_hierarchy_file, reactome_label_file)
 onto.save_as_obo(reacterm, reactome_obo_file, "ontology: reactome")
 react_onto = obo_parser.GODag(reactome_obo_file)
 
@@ -112,7 +112,7 @@ ontologies = {
 
 if species == "human":
     ## HPO ANNOTATIONS
-    gene_hpo_annotation = hpo.load_hpo_annotation(hpo_annotation_file)
+    gene_hpo_annotation = misc.load_hpo_annotation(hpo_annotation_file)
     gene_hpo_annotation_with_uniprot = {}
     gene_hpo_annotation_with_symbol = {}
     
@@ -127,7 +127,7 @@ if species == "human":
             gene_hpo_annotation_with_symbol[symbol] = gene_hpo_annotation[symbol]
 
     # query UniProtKB to find the corresponding ids of the remaining symbols and add them
-    mg_symbol_id_dict = up.get_symbol_dict(list(gene_hpo_annotation_with_symbol.keys()))
+    mg_symbol_id_dict = misc.get_symbol_dict(list(gene_hpo_annotation_with_symbol.keys()))
     for symbol in mg_symbol_id_dict.keys():
         uniprot_id = mg_symbol_id_dict[symbol]
         gene_hpo_annotation_with_uniprot[uniprot_id] = gene_hpo_annotation_with_symbol[symbol]
@@ -192,7 +192,7 @@ end_load = tm.time()
 #_________________________________________ E X P O R T
 
 ## Export the generated data as rdy2use files.
-cmn.save_as_json(rdy2use_annotations, "%s/%s_gene_annotation.json" % (data_path, species))
+misc.save_as_json(rdy2use_annotations, "%s/%s_gene_annotation.json" % (data_path, species))
 with open("%s/%s_gene_symbol.csv" % (data_path, species), 'wt') as csv:
     csv.write("symbol,id\n")
     for key in gaf_symbol_id_dict.keys():
