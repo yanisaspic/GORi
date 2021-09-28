@@ -26,7 +26,7 @@ begin = tm.time()
 # Convert input gene ids into symbols
 if symbol:
     gene_symbol_to_id_dict = {}
-    reader = csv.reader(open("%s/%s_gene_symbol.csv" % (data_path, species), 'rt'))
+    reader = csv.reader(open("%s/genes_symbols.csv" % (data_path), 'rt'))
     for row in reader:
         symbol, uniprot = row
         gene_symbol_to_id_dict[symbol] = uniprot
@@ -37,11 +37,11 @@ ontologies = {
     'GO': obo_parser.GODag(go_obo_file, optional_attrs="relationship"), 
     'R-': obo_parser.GODag(reactome_obo_file, optional_attrs="relationship")
     }
-if species == "human":
+if "HP" in target_onto:
     ontologies['HP'] = obo_parser.GODag(hpo_obo_file, optional_attrs="relationship")
 
 ## extract the annotations corresponding to the selected genes:
-with open("%s/%s_gene_annotation.json" % (data_path, species), 'rt') as anno:
+with open("%s/genes_annotations.json" % (data_path), 'rt') as anno:
     species_all_annotations = json.load(anno)
 
 ## extract the annotations of the target genes and convert them to transactions 

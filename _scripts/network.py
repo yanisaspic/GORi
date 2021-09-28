@@ -6,7 +6,7 @@ Data encoder and stylesheet for Dash Cytoscape.
 """
 
 import pandas as pd
-from math import pi, cos, sin
+import dash_html_components as html
 
 ### CYTOSCAPE NETWORK STYLESHEET
 style = [
@@ -45,7 +45,7 @@ style = [
 
 ]
 
-def dictize_node(item_id, items_metrics_row, node_size, colors, links):
+def dictize_node(item_id, items_metrics_row, node_size, colors):
     """
     # Description
     Converts an items dataframe's row as a dict of parameters used by Cytoscape.
@@ -55,7 +55,6 @@ def dictize_node(item_id, items_metrics_row, node_size, colors, links):
     ``items_metrics`` (df): the items id, weight, label and frequency. \n
     ``node_size`` (int): the size of a node. \n
     ``colors`` (dict): the keys are term prefixes and the values are the corresponding node colors. \n
-    ``links`` (dict): the keys are term prefixes and the values are links to display the ontology.
 
     # Usage
     >>> data_items = pd.DataFrame(
@@ -64,13 +63,11 @@ def dictize_node(item_id, items_metrics_row, node_size, colors, links):
     >>> target_item = 'Alpha'
     >>> items_colors = {
         'Al': [255, 0, 180], 'Be': [0, 0, 0], 'Ga': [75, 75, 75], 'De': [100, 200, 150] }
-    >>> items_links = {'Al': 'https://', 'Be': 'www.', 'Ga': 'http://', 'De': 'www.placeholder/'}
     >>> data_items_rowA = data_items.loc[data_items['item'] == target_item]
-    >>> print(dictize_node(target_item, data_items_rowA, 10, items_colors, items_links))
+    >>> print(dictize_node(target_item, data_items_rowA, 10, items_colors))
     ... {
         'id': 'Alpha', 'label': 'A', 'size': 8.0, 'font': 0.8, 'line': 7.2, 
-        'color': [22.95, 0.0, 16.2], 'href': 'https://Alpha', 
-        'weight': 0.3, 'freq': 0.8, 'connect': 0}
+        'color': [22.95, 0.0, 16.2], 'weight': 0.3, 'freq': 0.8, 'connect': 0}
     """
     freq = items_metrics_row['freq'].values[0]
     weight = items_metrics_row['weight'].values[0]
@@ -83,7 +80,6 @@ def dictize_node(item_id, items_metrics_row, node_size, colors, links):
             'font': round(node_size * 0.1 * freq, 1),
             'line': round(node_size * 0.9 * freq, 1),
             'color': [ round(e*weight**2, 1) for e in colors[term_prefix] ],
-            'href': links[term_prefix] + item_id,
             'weight': weight, 'freq': freq, 'connect': 0
     }
     return node
@@ -92,10 +88,6 @@ def dataframize_data(rules_metrics, items_metrics, node_size=200, colors = {
         'GO': [0, 255, 255],
         'R-': [255, 0, 255],
         'HP': [255, 255, 0]
-    }, links = {
-        'GO': 'ebi.ac.uk/QuickGO/term/',
-        'R-': 'https://reactome.org/PathwayBrowser/#/',
-        'HP': 'https://hpo.jax.org/app/browse/term/'
     }):
     """
     # Description
@@ -106,7 +98,6 @@ def dataframize_data(rules_metrics, items_metrics, node_size=200, colors = {
     ``items_metrics`` (df): the items names and their weights, readable labels and frequencies. \n
     ``node_size`` (int): the default size of a node in your network. \n
     ``colors`` (dict): the keys are term prefixes and the values are the corresponding node colors. \n
-    ``links`` (dict): the keys are term prefixes and the values are links to display the ontology.
 
     # Usage
     >>> data_rules = pd.DataFrame({
@@ -120,13 +111,12 @@ def dataframize_data(rules_metrics, items_metrics, node_size=200, colors = {
             'label': ['Al', 'Bl', 'Cl']})
     >>> nodes, edges = dataframize_data(
             data_rules, data_items, 
-            colors={'Al': [0,0,0], 'Be': [200,200,200], 'Ga': [100,0,0]},
-            links={'Al': 'https://whatever', 'Be': 'www.idk', 'Ga': 'http://ok'})
+            colors={'Al': [0,0,0], 'Be': [200,200,200], 'Ga': [100,0,0]})
     >>> print(nodes)
-    ... id label size font  line             color                   href weight freq connect
-    0  Alpha    Al   16  1.6  14.4   [0.0, 0.0, 0.0]  https://whateverAlpha    0.3  0.8       2
-    1   Beta    Bl   14  1.4  12.6   [8.0, 8.0, 8.0]            www.idkBeta    0.2  0.7       3
-    2  Gamma    Cl    6  0.6   5.4  [64.0, 0.0, 0.0]         http://okGamma    0.8  0.3       3
+    ... id label size font line             color weight freq connect
+    0  Alpha    Al  160   16  144   [0.0, 0.0, 0.0]    0.3  0.8       2
+    1   Beta    Bl  140   14  126   [8.0, 8.0, 8.0]    0.2  0.7       3
+    2  Gamma    Cl   60    6   54  [64.0, 0.0, 0.0]    0.8  0.3       3
     >>> print(edges)
     ...             color conf connect              id lift rev_conf size source target
     0  [-235, -235, -235]  0.8       1   Alpha => Beta  1.5     None  3.8  Alpha   Beta
@@ -152,7 +142,7 @@ def dataframize_data(rules_metrics, items_metrics, node_size=200, colors = {
         # get the 2 corresponding nodes
         for term in [body, head]:
             term_metrics = items_metrics.loc[items_metrics['item'] == term]
-            nodes[term] = nodes.get(term, dictize_node(term, term_metrics, node_size, colors, links))
+            nodes[term] = nodes.get(term, dictize_node(term, term_metrics, node_size, colors))
             nodes[term]['connect'] += 1
 
         # get the corresponding edge
@@ -160,7 +150,7 @@ def dataframize_data(rules_metrics, items_metrics, node_size=200, colors = {
         edge = {
                 'id': edge_id, 'source': body, 'target': head, 
                 'size': round(conf**2 * min_node_size, 1),
-                'color': [ e - 235 for e in colors[body[:2]] ],
+                'color': [ e - 150 for e in colors[body[:2]] ],
                 'lift': lift, 'conf': conf, 'connect': 0, 'rev_conf': None, 'effect': 'hidden'
         }
         single_edges[edge_id] = single_edges.get(edge_id, edge)
@@ -213,7 +203,7 @@ def encode_data(data):
     """
     return [{'data': x} for x in data.to_dict('records')]
 
-def subgraph(main_node_id, nodes, edges):
+def zoom_node(main_node_id, nodes, edges):
     """
     # Description
     Returns Dash Cytoscape readable data to draw a concentric graph centered around one node.
@@ -232,3 +222,55 @@ def subgraph(main_node_id, nodes, edges):
     key_nodes_data = encode_data(key_nodes_df)
 
     return key_nodes_data + key_edges_data
+
+def zoom_edge(main_edge_id, nodes, edges):
+    """
+    # Description
+    Returns Dash Cytoscape readable data to draw a graph of two connected nodes.
+
+    # Arguments
+    ``main_edge_id`` (str): id of the existing edge. \n
+    ``nodes`` (df): the nodes ids, labels, weights, frequencies, etc. \n
+    ``edges`` (df): the edges ids, labels, lifts, confidences, colors, etc.
+    """
+    key_edge_row = edges[edges['id'] == main_edge_id]
+    key_edge_data = encode_data(key_edge_row)
+
+    # get the two connected nodes
+    nodes_ids = main_edge_id.split(" => ")
+    key_nodes_df = nodes[nodes['id'].isin(nodes_ids)]
+    key_nodes_data = encode_data(key_nodes_df)
+
+    return key_edge_data + key_nodes_data
+
+def htmlize_elem(main_elem_id, nodes, edges):
+    """
+    # Description
+    Returns the data of a network element as a list of HTML text elements.
+
+    # Arguments:
+    ``main_elem_id`` (str): id of the existing node or edge. \n
+    ``nodes`` (df): the nodes ids, labels, weights, frequencies, etc. \n
+    ``edges`` (df): the edges ids, labels, lifts, confidences, colors, etc.
+    """
+    links = {
+        'GO': 'https://www.ebi.ac.uk/QuickGO/term/',
+        'R-': 'https://reactome.org/PathwayBrowser/#/',
+        'HP': 'https://hpo.jax.org/app/browse/term/'
+    }
+
+    if " => " not in main_elem_id:
+        node_id = main_elem_id
+        node_row = nodes.loc[ nodes['id'] == node_id ]
+        onto_href = html.A(
+            html.B("%s (%s)" % ( node_row['label'].values[0], node_row['id'].values[0]) ),
+                href=links[node_id[:2]] + node_id, target="_blank", id="raw-data-elem")
+        node_metrics = html.Div([
+                html.P( [ html.B("Weight : "), round(node_row['weight'].values[0], 2) ]), 
+                html.P( [ html.B("Frequency : "), round(node_row['freq'].values[0], 2) ]), 
+                html.P( [ html.B("Connectivity : "), round(node_row['connect'].values[0] / 2, 2) ] ) 
+            ], id="raw-data-metrics")
+
+        data_children = [onto_href, node_metrics]
+    
+    return html.Div(data_children)

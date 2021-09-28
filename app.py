@@ -6,7 +6,7 @@ Prepares the graph highlighting the rules terms, their confidences, lift and cov
 """
 
 from settings import *
-from math import inf
+from random import randint
 from _scripts.misc import truncate
 import pandas as pd
 import _scripts.network as nw
@@ -35,14 +35,15 @@ data_items = pd.read_csv(items_file)
 data_rules = pd.read_csv(rules_file)
 nodes, edges = nw.dataframize_data(data_rules, data_items, 200)
 interest_nodes, interest_edges = nodes.copy(), edges.copy()
+last_tap_event = None
 
 # default values for the main network
 data = nw.encode_data(interest_nodes) + nw.encode_data(interest_edges)    
 
 # default node for the zoom network is the central one
-nodes = nodes.sort_values(by='connect', ascending=False)
-zoom_node_id = nodes.iloc[0]['id']
-default_zoom_data = nw.subgraph(zoom_node_id, interest_nodes, interest_edges)
+x = randint(0, nodes.shape[0] - 1)
+zoom_key_id = nodes.iloc[x]['id']
+default_zoom_data = nw.zoom_node(zoom_key_id, interest_nodes, interest_edges)
 
 app = dash.Dash(__name__, title="GORi")
 
@@ -60,7 +61,7 @@ layout_dropdown = dcc.Dropdown(
     id='dropdown-layout', className='long-dropdown', value='concentric', clearable=False,
     options=[ 
         {'label': name.capitalize(), 'value': name} 
-        for name in ['cola', 'concentric', 'euler', 'klay', 'random'] ], style={}
+        for name in ['concentric', 'euler', 'klay', 'random'] ], style={}
 )
 
 # Ontology
@@ -69,7 +70,6 @@ elements_dropdown = dcc.Dropdown(
         {'label': 'Gene Ontology', 'value': 'id@GO'},
         {'label': 'Reactome', 'value': 'id@R-'},
         {'label': 'Human Phenotype Ontology', 'value': 'id@HP'},
-        {'label': 'One-sided', 'value': 'effect@hidden'},
         {'label': 'Positive (two-sided)', 'value': 'effect@pos'},
         {'label': 'Negative (two-sided)', 'value': 'effect@neg'},
         {'label': 'Indefinite (two-sided)', 'value': 'effect@ind'}
@@ -83,25 +83,30 @@ df_metrics = {
     'edges': [edges, ['conf', 'lift'], ['Association\nConfidence', 'Association\nLift']]
 }
 for elem in df_metrics.keys():
-    df, categories, labels = df_metrics[elem][0], df_metrics[elem][1], df_metrics[elem][2]
+    df, categories, labels = df_metrics[elem]
     for i in range(len(categories)):
         cat = categories[i]
-        mini, maxi = float( truncate(df[cat].min(), 2) ), float( truncate(df[cat].max(), 2) )
+        mini, maxi = df[cat].min(), df[cat].max()
 
         slid = dcc.RangeSlider(
             id="slider-%s" % cat,
             className='cat-slider',
             min = mini,
             max = maxi,
-            step = float( truncate( (maxi - mini)/10, 2) ),
+            step = (maxi - mini)/20,
             value = [mini, maxi],
             marks={
                 mini: {'label': ""},
                 maxi: {'label': ""}
             },
-            allowCross=False
+            allowCross=False,
         )
-        sliders.append(html.Div(id=cat, children=[ html.P( labels[i], className="slider-title" ), slid]) )
+        sliders.append(html.Div(id=cat, children=[ 
+            html.P( labels[i], className="slider-title" ), 
+            slid,
+            html.P(round(mini, 2), id="slider-min-%s" % cat, className="slider-value-min slider-value"),
+            html.P(round(maxi, 2), id="slider-max-%s" % cat, className="slider-value-max slider-value") 
+        ]))
 param_sliders = html.Div(id="sliders", children=sliders, style={})
 
 parameters = html.Div(
@@ -109,30 +114,33 @@ parameters = html.Div(
     children=[
         html.H2(html.Span('Parameters', style={}), style={}), 
         html.P('Select a layout to display the associations of interest :', style={}), layout_dropdown,
-        html.P('Select adjectives describing the associations of interest :', style={}), elements_dropdown,
+        html.P('Select keywords describing the associations of interest :', style={}), elements_dropdown,
         html.P('Select metrics ranges including the associations of interest :', style={}), param_sliders])
+
+data_raw = html.Div(id="data", children=[
+    html.H2(html.Span('Data', style={}), style={}),
+    html.Div(id="raw-data", children=nw.htmlize_elem(zoom_key_id, nodes, edges))]
+    )
+
+menu = html.Div(id='menu', children=[
+    html.H1('GORi', style={}), parameters, data_raw], style={})
 
 ### 3. WEBAPP ZOOM ###
 zoom_network = cyto.Cytoscape(
     id='zoom_cytoscape', elements=default_zoom_data, 
-    layout={'name': 'concentric', 'animate': False}, style={}, stylesheet=nw.style)
-data = html.Div(
-    id="data", style={},
-    children=[
-        html.H2(html.Span('Data', style={}), style={})
-    ]
-)
-
-menu = html.Div(id='menu', children=[html.H1('GORi', style={}), parameters, data], style={})
+    layout={'name': 'concentric', 'animate': True}, style={}, stylesheet=nw.style)
 
 ### WEBPAGE INTERACTIONS
 
 @app.callback(
     Output('main_cytoscape', 'elements'),
-    Input('dropdown-elements', 'value'))
-def update_elements(association_adjectives):
-    global interest_nodes
-    global interest_edges
+    Input('dropdown-elements', 'value'),
+    Input('slider-freq', 'value'),
+    Input('slider-weight', 'value'),
+    Input('slider-conf', 'value'),
+    Input('slider-lift', 'value'))
+def update_main(association_adjectives, freq_lim, weight_lim, conf_lim, lift_lim):
+    global interest_nodes, interest_edges
 
     # separe the adjectives in categories
     adjectives = {
@@ -146,32 +154,61 @@ def update_elements(association_adjectives):
     valid_prefixes = "|".join(adjectives['id'])
 
     # filter the data for each category
-    interest_nodes = nodes.loc[ nodes['id'].str.contains(valid_prefixes) ]
-    interest_edges = edges.loc[ edges['source'].str.contains(valid_prefixes) & \
-        edges['target'].str.contains(valid_prefixes)]
-    interest_edges = interest_edges.loc[ interest_edges['effect'].isin(adjectives['effect']) ]
+    interest_nodes = nodes[ nodes['id'].str.contains(valid_prefixes) ]
+    for x, y in zip(['freq', 'weight'], [freq_lim, weight_lim]):
+        interest_nodes = interest_nodes[ interest_nodes[x].between(y[0], y[1], inclusive=True) ]
+    valid_nodes_ids = list(interest_nodes['id'])
+
+
+    interest_edges = edges[ 
+        edges['source'].isin(valid_nodes_ids) & edges['target'].isin(valid_nodes_ids)]
+    interest_edges = interest_edges[
+        interest_edges['lift'].between(lift_lim[0], lift_lim[1], inclusive=True) ]
+    interest_edges = interest_edges[
+        ( interest_edges['conf'].between(conf_lim[0], conf_lim[1], inclusive = True ) )
+        | ( interest_edges['rev_conf'].between(conf_lim[0], conf_lim[1], inclusive = True) )
+    ]
+    interest_edges = interest_edges[ interest_edges['effect'].isin(adjectives['effect']) ]
 
     # encode the data and use it as cytoscape elements
-    data = nw.encode_data(interest_nodes) + nw.encode_data(interest_edges)
-    return data
+    return nw.encode_data(interest_nodes) + nw.encode_data(interest_edges)
 
 @app.callback(
     Output('zoom_cytoscape', 'elements'),
     Input('main_cytoscape', 'tapNodeData'),
     Input('zoom_cytoscape', 'tapNodeData'),
+    Input('main_cytoscape', 'tapEdgeData'),
+    Input('zoom_cytoscape', 'tapEdgeData'),
     Input('main_cytoscape', 'elements'))
-def display_node(tapNodeData_main, tapNodeData_zoom, priority_holder):
+def update_zoom(tapNodeData_main, tapNodeData_zoom, tapEdgeData_main, tapEdgeData_zoom, holder):
+    
     # last input added to make sure that the elements are filtered before running this callback
-    global zoom_node_id
-
+    global zoom_key_id, last_tap_event
     context = dash.callback_context
     trigger = context.triggered[0]['prop_id']
-    if trigger == 'main_cytoscape.tapNodeData':
-        zoom_node_id = tapNodeData_main['id']
-    elif trigger == 'zoom_cytoscape.tapNodeData':
-        zoom_node_id = tapNodeData_zoom['id']
+    origin, event = trigger.split(".")
 
-    return nw.subgraph(zoom_node_id, interest_nodes, interest_edges)
+    if event == 'elements':
+        if last_tap_event == 'tapEdgeData':
+            return nw.zoom_edge(zoom_key_id, interest_nodes, interest_edges)
+        else:
+            return nw.zoom_node(zoom_key_id, interest_nodes, interest_edges)
+
+    if event == 'tapNodeData':
+        last_tap_event = 'tapNodeData'
+        if origin == 'main_cytoscape':
+            zoom_key_id = tapNodeData_main['id']
+        else:
+            zoom_key_id = tapNodeData_zoom['id']
+        return nw.zoom_node(zoom_key_id, interest_nodes, interest_edges)
+
+    if event == 'tapEdgeData':
+        last_tap_event = 'tapEdgeData'
+        if origin == 'main_cytoscape':
+            zoom_key_id = tapEdgeData_main['id']
+        else:
+            zoom_key_id = tapEdgeData_zoom['id']
+        return nw.zoom_edge(zoom_key_id, interest_nodes, interest_edges)
 
 @app.callback(
     Output('main_cytoscape', 'layout'),
@@ -181,6 +218,59 @@ def update_layout(layout):
         'name': layout,
         'animate': True
     }
+
+@app.callback(
+    Output('raw-data', 'children'),
+    Input('main_cytoscape', 'tapNodeData'),
+    Input('zoom_cytoscape', 'tapNodeData')
+)
+def update_data(tapNodeData_main, tapNodeData_zoom):
+
+    context = dash.callback_context
+    trigger = context.triggered[0]['prop_id']
+    origin, event = trigger.split(".")
+
+    if origin == 'main_cytoscape':
+        elem_id = tapNodeData_main['id']
+    elif origin == 'zoom_cytoscape':
+        elem_id = tapNodeData_zoom['id']
+    else:
+        elem_id = zoom_key_id
+    return nw.htmlize_elem(elem_id, nodes, edges)
+
+@app.callback(
+    Output('slider-min-freq', 'children'),
+    Output('slider-max-freq', 'children'),
+    Input('slider-freq', 'value')
+)
+def update_slider(interval):
+    return round(interval[0], 2), round(interval[1], 2)
+
+@app.callback(
+    Output('slider-min-weight', 'children'),
+    Output('slider-max-weight', 'children'),
+    Input('slider-weight', 'value')
+)
+def update_slider(interval):
+    return round(interval[0], 2), round(interval[1], 2)
+
+@app.callback(
+    Output('slider-min-conf', 'children'),
+    Output('slider-max-conf', 'children'),
+    Input('slider-conf', 'value')
+)
+def update_slider(interval):
+    return round(interval[0], 2), round(interval[1], 2)
+
+@app.callback(
+    Output('slider-min-lift', 'children'),
+    Output('slider-max-lift', 'children'),
+    Input('slider-lift', 'value')
+)
+def update_slider(interval):
+    return round(interval[0], 2), round(interval[1], 2)
+
+
 
 ### APP LAUNCHER
 

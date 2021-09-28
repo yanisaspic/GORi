@@ -62,14 +62,17 @@ def calculate_term_IC(terms_count, annotations_count):
 
 begin = tm.time()
 
-associations.dnld_annotation(gaf_file)
-misc.replace_first_line(gaf_file, "!gaf-version: 2.1\n")
+if download:
+    associations.dnld_annotation(gaf_file)
+    # modify the header in order to use goatools (gaf version issues)
+    misc.replace_first_line(gaf_file, "!gaf-version: 2.1\n")
+
 misc.download_url(go_obo_url, go_obo_file)
 misc.download_url(reactome_hierarchy_url, reactome_hierarchy_file)
 misc.download_url(reactome_label_url, reactome_label_file)
 misc.download_url(reactome_annotation_url, reactome_annotation_file)
 
-if species == "human":
+if "HP" in target_onto:
     misc.download_replace_first(hpo_annotation_url, hpo_annotation_file, "")
     misc.download_url(hpo_obo_url, hpo_obo_file)
 
@@ -110,7 +113,7 @@ ontologies = {
     'R-': react_onto
     }
 
-if species == "human":
+if "HP" in target_onto:
     ## HPO ANNOTATIONS
     gene_hpo_annotation = misc.load_hpo_annotation(hpo_annotation_file)
     gene_hpo_annotation_with_uniprot = {}
@@ -139,7 +142,7 @@ if species == "human":
     hpo_onto = obo_parser.GODag(hpo_obo_file)
     ontologies['HP'] = hpo_onto
 
-# get the GO, Reactome (and HPO if species == human) leaf nodes corresponding to each gene.
+# get the GO, Reactome (and HPO if HP in target_onto) leaf nodes corresponding to each gene.
 rdy2use_annotations = {}
 
 annotations = [gene_go_annotation, gene_reactome_annotation]
@@ -192,8 +195,8 @@ end_load = tm.time()
 #_________________________________________ E X P O R T
 
 ## Export the generated data as rdy2use files.
-misc.save_as_json(rdy2use_annotations, "%s/%s_gene_annotation.json" % (data_path, species))
-with open("%s/%s_gene_symbol.csv" % (data_path, species), 'wt') as csv:
+misc.save_as_json(rdy2use_annotations, "%s/genes_annotations.json" % (data_path))
+with open("%s/genes_symbols.csv" % (data_path), 'wt') as csv:
     csv.write("symbol,id\n")
     for key in gaf_symbol_id_dict.keys():
         csv.write("%s,%s\n" % (key, gaf_symbol_id_dict[key]))

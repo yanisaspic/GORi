@@ -426,7 +426,7 @@ def get_numeric_input(label, mini, maxi):
     >>> print(score)
     ... 10
     """
-    print("\n## You can add a minus (e.g. -0.1) to input a maximal %s value instead (%s <= 0.1)."
+    print("\n## You can add a minus to input a maximal %s value instead (e.g. -0.1: %s <= 0.1)."
         % (label, label) )
     var = input("Please set a valid minimal %s value (%s <= %s <= %s): " % (
         label, mini, label, maxi))
