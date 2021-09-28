@@ -7,6 +7,24 @@ h1, p {
     color: #EAEDDA;
 }
 
+.slider-value {
+    margin: 1vh 2% 0vh 2%;
+    width: 45%;
+}
+
+.slider-value-min {
+    float: left;
+}
+
+.rc-slider-handle:active {
+    box-shadow: 0 0 5px #202020;
+}
+
+.slider-value-max {
+    float: right;
+    text-align: right;
+}
+
 h1 {
     font-size: 8vh;
     text-align: center;
@@ -24,7 +42,7 @@ p {
     margin-left: 10%;
 }
 
-div[class^="dash-debug"] .rc-slider-dot, div[class^="dash-error"] {
+div[class^="dash-debug"], .rc-slider-dot, div[class^="dash-error"] {
     display: none;
 }
 
@@ -126,9 +144,9 @@ div#webapp {
 
 div#zoom_cytoscape {
     position: fixed;
-    height: 25vw;
-    width: 25vw;
-    top: 1vh;
+    height: 30vw;
+    width: 30vw;
+    bottom: 1vh;
     left: 1vw;
     background-color: rgba(32, 32, 32, 0.7);
     border: solid;
@@ -149,6 +167,26 @@ div#sliders {
     position: relative;
     height: 1vh;
     background-color: #202020;
+}
+
+p>#raw-metrics {
+    color: #202020;
+}
+
+div#raw-data-metrics, a#raw-data-elem {
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+p>div#raw-data-metrics {
+    color: #202020;
+}
+
+a:-webkit-any-link {
+    color: #202020;
 }
 
 .rc-slider-track {
