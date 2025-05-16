@@ -1,0 +1,8 @@
+*cache*
+*pypath_log*
+.mypy_cache/*
+priors/*
+.priors/*
+*.log
+*.pyc
+*.xlsx
