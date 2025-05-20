@@ -135,7 +135,7 @@ def get_download_wrapper() -> dict[str, Callable]:
 
 
 def download_priors(
-    priors: set[str], path: str = "./.priors", download_wrapper=get_download_wrapper()
+    priors: set[str] = {"CTYP", "GENG", "PATH"}, path: str = "./.priors", download_wrapper=get_download_wrapper()
 ) -> None:
     """Download knowledge bases exploitable for a GORi annotation analysis.
 

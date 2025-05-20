@@ -249,7 +249,7 @@ def get_setup_wrapper() -> dict[str, Callable]:
 
 
 def setup_priors(
-    priors: set[str],
+    priors: set[str] = {"CTYP", "GENG", "PATH"},
     dl_path: str = "./.priors",
     su_path: str = "./priors",
     setup_wrapper=get_setup_wrapper(),
