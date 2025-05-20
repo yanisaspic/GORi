@@ -1,6 +1,6 @@
-"""Function called to download the knowledge bases prior to the GORi analysis.
+"""Functions used by gori.init.download_priors().
 
-    2025/04/18 @yanisaspic"""
+    2025/05/20 @yanisaspic"""
 
 import os
 import gzip
@@ -118,44 +118,3 @@ def _download_pathways(path: str) -> None:
         for file, url in resources.items():
             urlretrieve(url, f"{_path}/{file}")
             log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
-
-
-def get_download_wrapper() -> dict[str, Callable]:
-    """A wrapper to download curated knowledge bases (i.e. priors).
-
-    Returns
-        A dict associating prior labels (keys) to their download functions (values).
-    """
-    return {
-        "CTYP": _download_cell_types,
-        "DISE": _download_diseases,
-        "GENG": _download_gene_groups,
-        "PATH": _download_pathways,
-    }
-
-
-def download_priors(
-    priors: set[str] = {"CTYP", "GENG", "PATH"}, path: str = "./.priors", download_wrapper=get_download_wrapper()
-) -> None:
-    """Download knowledge bases exploitable for a GORi annotation analysis.
-
-    ``priors`` is a set of valid knowledge categories (e.g. CTYP).
-    ``path`` is a path to store the downloaded files.
-    ``download_wrapper`` is a dict associating prior labels (keys) to their download functions (values).
-    """
-    log = open("./downloads.log", "w")
-    log.write(f"{_get_timestamp()}: Running downloads_priors.py\n")
-    log.close()
-
-    if not os.path.isdir(path):
-        os.mkdir(path)
-
-    for p in priors:
-        log = open("./downloads.log", "a")
-        log.write(f"\t {_get_timestamp()}: Downloading {p}\n")
-        log.close()
-        download_wrapper[p](path)
-
-    log = open("./downloads.log", "a")
-    log.write(f"{_get_timestamp()}: Done")
-    log.close()

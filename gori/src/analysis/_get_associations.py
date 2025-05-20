@@ -10,7 +10,7 @@ from scipy.stats import fisher_exact
 from mlxtend.preprocessing import TransactionEncoder
 from statsmodels.stats.multitest import fdrcorrection
 from mlxtend.frequent_patterns import fpgrowth, association_rules
-from gori.utils import (
+from gori.src.utils import (
     _get_prior_ancestors,
     _get_prior_descendants,
     _get_prior_translation,
@@ -313,7 +313,7 @@ def _enrich_associations(
     return associations
 
 
-def get_associations(
+def _get_associations(
     antecedent_prior: str,
     consequent_prior: str,
     annotations: dict[str, dict[str, set[str]]],
@@ -331,7 +331,7 @@ def get_associations(
         A pd.DataFrame with nine columns: `antecedents`, `consequents`, `lift`, `pval`, `fdr`,
         `n_genes`, `genes`, `url_a` and `url_c`
     """
-    associations_counter = {"prior": consequent_prior}  # dict[str, Any]
+    associations_counter = {"prior": consequent_prior}  # type: dict[str, Any]
     transaction_matrix = _get_transaction_matrix(annotations)
 
     while True:

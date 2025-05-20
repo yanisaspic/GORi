@@ -1,11 +1,11 @@
-"""Miscalleneous functions called to conduct a GORi analysis.
+"""Miscalleneous functions used at multiple points during a GORi analysis.
 
-    2025/05/15 @yanisaspic"""
+    2025/05/20 @yanisaspic"""
 
 import networkx as nx
 from typing import Any, Optional
 from pypath.utils.go import GOAnnotation
-from pypath.utils.mapping import id_from_label, id_from_label0
+from pypath.utils.mapping import id_from_label
 
 
 def _get_uniprot_id(gene: str) -> str:

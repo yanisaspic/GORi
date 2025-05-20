@@ -1,13 +1,13 @@
-"""Function called to set-up the priors of the GORi analysis, after downloading them.
+"""Functions used by gori.init.setup_priors().
 
-    2025/04/18 @yanisaspic"""
+    2025/05/20 @yanisaspic"""
 
 import os
 import re
 import json
 import pandas as pd
 from typing import Any, Callable
-from gori.utils import _get_uniprot_id
+from gori.src.utils import _get_uniprot_id
 
 
 def _setup_cell_types(dl_path: str, su_path: str) -> None:
@@ -232,36 +232,3 @@ def _setup_pathways(dl_path: str, su_path: str) -> None:
     hierarchy = hierarchy.to_dict()
     with open(f"{su_path}/PATH_h.json", "w") as file:
         json.dump(hierarchy, file)
-
-
-def get_setup_wrapper() -> dict[str, Callable]:
-    """A wrapper to set-up curated knowledge bases (i.e. priors).
-
-    Returns
-        A dict associating prior labels (keys) to their set-up functions (values).
-    """
-    return {
-        "CTYP": _setup_cell_types,
-        "DISE": _setup_diseases,
-        "GENG": _setup_gene_groups,
-        "PATH": _setup_pathways,
-    }
-
-
-def setup_priors(
-    priors: set[str] = {"CTYP", "GENG", "PATH"},
-    dl_path: str = "./.priors",
-    su_path: str = "./priors",
-    setup_wrapper=get_setup_wrapper(),
-) -> None:
-    """Set-up priors exploitable for a GORi annotation analysis.
-
-    ``priors`` is a set of valid knowledge categories (e.g. CTYP).
-    ``dl_path`` is a path where downloaded files are stored.
-    ``su_path`` is a path to store the set-up files.
-    ``setup_wrapper`` is a dict associating prior labels (keys) to their set-up functions (values).
-    """
-    if not os.path.isdir(su_path):
-        os.mkdir(su_path)
-    for p in priors:
-        setup_wrapper[p](dl_path, su_path)

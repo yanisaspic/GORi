@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Any
 from pypath.utils.go import GOAnnotation
 from pypath.utils.mapping import label as gene_symbol
-from gori.utils import (
+from gori.src.utils import (
     _get_generic_ancestors,
     _get_go_ancestors,
     _get_ctyp_ancestors,
@@ -132,7 +132,7 @@ def _get_prior_annotations(uid: str, prior: str, data: dict[str, Any]) -> set[st
     return out
 
 
-def get_annotations_counter(
+def _get_annotations_counter(
     annotations: dict[str, dict[str, set[str]]]
 ) -> pd.DataFrame:
     """Get the annotations of a geneset across multiple priors.
@@ -152,7 +152,7 @@ def get_annotations_counter(
     return df
 
 
-def get_annotations(
+def _get_annotations(
     geneset: set[str], data: dict[str, Any], use_gene_symbol: bool
 ) -> dict[str, dict[str, set[str]]]:
     """Get the annotations of a geneset across multiple priors.

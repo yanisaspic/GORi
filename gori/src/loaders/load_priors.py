@@ -1,15 +1,14 @@
-"""Function called to load priors for a GORi analysis.
+"""Functions used by gori.init.load_priors().
 
-    2025/05/12 @yanisaspic"""
+    2025/05/20 @yanisaspic"""
 
 import json
 import pandas as pd
 from pypath.utils import go
 from pypath.inputs import hpo, hgnc
 from nxontology.imports import from_file
-from typing import Any, Callable, Optional
-from gori.utils import _prune_hierarchy
-from gori.utils import _get_uniprot_id
+from typing import Any
+from gori.src.utils import _prune_hierarchy, _get_uniprot_id
 
 
 def _load_cell_types(path: str) -> dict[str, Any]:
@@ -196,56 +195,3 @@ def _load_gene_ontology() -> go.GOAnnotation:
         A GOAnnotation object containing the gene ontology.
     """
     return go.GOAnnotation()
-
-
-def get_load_wrapper() -> dict[str, Callable]:
-    """A wrapper to load curated knowledge bases (i.e. priors).
-
-    Returns
-        A dict associating prior labels (keys) to their set-up functions (values).
-    """
-    return {
-        "CTYP": _load_cell_types,
-        "DISE": _load_diseases,
-        "GENG": _load_gene_groups,
-        "PATH": _load_pathways,
-        "PHEN": _load_phenotypes,
-    }
-
-
-def load_priors(
-    priors: set[str], path: str = "./priors", load_wrapper=get_load_wrapper()
-) -> dict[str, Any]:
-    """Load a subset of knowledge bases readily available in the GORi package.
-
-    ``priors`` is a set of strings containing the names of the knowledge bases to load.
-    The available knowledge bases are:
-        - "CTYP": cell types
-        - "DISE": diseases
-        - "GENG": gene groups
-        - "PATH": pathways
-        - "PHEN": phenotypes
-        - "BIOP": biological processes
-        - "CELC": cellular components
-        - "MOLF": molecular functions
-    ``path`` is the path to the JSON files containing the knowledge bases.
-    ``load_wrapper`` is a dict associating prior labels (keys) to their load functions (values).
-
-    Returns
-        A dict associating knowledge base names (keys) to their contents (values).
-    """
-    knowledge_bases = {}
-    go_priors = {"BIOP", "CELC", "MOLF"}
-    if any(p in priors for p in go_priors):
-        gene_ontology = _load_gene_ontology()
-
-    for p in priors:
-        if p in ["BIOP", "CELC", "MOLF"]:
-            knowledge_bases[p] = gene_ontology
-        elif p not in load_wrapper.keys():
-            raise ValueError(
-                f"Invalid prior: {p}. Valid priors are: {set(load_wrapper).union(go_priors)}"
-            )
-        else:
-            knowledge_bases[p] = load_wrapper[p](path)
-    return knowledge_bases
