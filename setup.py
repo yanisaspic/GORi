@@ -24,6 +24,7 @@ REQUIREMENTS = [
     "pipreqs>=0.5.0",
     "plotly>=5.19.0",
     "pypath>=0.1",
+    "pypath_common>=0.2.5",
     "pypath-omnipath>=0.16.17",
     "scipy>=1.9.1",
     "setuptools>=69.2.0",
