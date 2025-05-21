@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
-NAME = "GORi-KB"
+NAME = "gori"
 VERSION = "0.1"
-DESCRIPTION = "Context-informed genesets annotation."
+DESCRIPTION = "Context-informed genesets annotations."
 LONG_DESCRIPTION = "An algorithm to annotate related genesets, with any knowledge base."
 KEYWORDS = [
     "geneset annotation",
@@ -13,7 +13,7 @@ KEYWORDS = [
 ]
 AUTHOR = "Yanis Asloudj"
 AUTHOR_EMAIL = "yasloudj@u-bordeaux.fr"
-URL = "https://github.com/yanisaspic/GORi-KB"
+URL = "https://github.com/yanisaspic/GORi"
 
 REQUIREMENTS = [
     "itables>=2.2.4",

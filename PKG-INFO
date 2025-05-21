@@ -1,0 +1,23 @@
+Metadata-Version: 1.1
+Name: gori
+Version: 0.1
+Summary: Context-informed genesets annotations.
+Home-page: https://github.com/yanisaspic/GORi
+Author: Yanis Asloudj
+Author-email: yasloudj@u-bordeaux.fr
+License: GNU General Public License v3.0
+Description: An algorithm to annotate related genesets, with any knowledge base.
+Keywords: geneset annotation frequent itemset mining multi-scale multi-resolution semantic enrichment single-cell
+Requires: itables (>=2.2.4)
+Requires: mlxtend (>=0.23.1)
+Requires: networkx (>=0.23.1)
+Requires: nxontology (>=0.5.0)
+Requires: pandas (>=1.4.4)
+Requires: pipreqs (>=0.5.0)
+Requires: plotly (>=5.19.0)
+Requires: pypath (>=0.1)
+Requires: pypath_common (>=0.2.5)
+Requires: pypath-omnipath (>=0.16.17)
+Requires: scipy (>=1.9.1)
+Requires: setuptools (>=69.2.0)
+Requires: statsmodels (>=0.13.2)
