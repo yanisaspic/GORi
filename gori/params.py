@@ -6,6 +6,7 @@ from typing import Any
 from gori.wrappers import (
     ancestors_wrapper,
     annotations_wrapper,
+    roots_wrapper,
     descendants_wrapper,
     download_wrapper,
     headers_wrapper,
@@ -34,6 +35,7 @@ def _get_wrappers() -> dict[str, dict[str, Any]]:
         "inverse_translate_wrapper": inverse_translate_wrapper(),
         "load_wrapper": load_wrapper(),
         "resources_wrapper": resources_wrapper(),
+        "roots_wrapper": roots_wrapper(),
         "setup_wrapper": setup_wrapper(),
         "terms_wrapper": terms_wrapper(),
         "translate_wrapper": translate_wrapper(),

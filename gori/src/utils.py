@@ -262,3 +262,60 @@ def _get_prior_url(
             return urls_wrapper[prior](tmp, headers_wrapper[prior], data)
         return _get_generic_url(tmp)
     return None
+
+
+def _get_generic_terms(prior: dict[str, dict[str, Any]]) -> set[str]:
+    """Get every term in a knowledge base.
+
+    ``prior`` is a dict with three keys: "annotations", "hierarchy" and "translations".
+
+    Returns
+        A set of terms.
+    """
+    return set(prior["translations"].keys())
+
+
+def _get_prior_terms(
+    prior: str, data: dict[str, Any], params: dict[str, Any]
+) -> set[str]:
+    """Get every term in a knowledge base.
+
+    ``prior`` is a prior label.
+    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``params`` is a dict of parameters.
+
+    Returns
+        A set of terms.
+    """
+    terms_wrapper = params["wrappers"]["terms_wrapper"]
+    if prior in terms_wrapper.keys():
+        return terms_wrapper[prior](data[prior])
+    return _get_generic_terms(data[prior])
+
+
+def _get_prior_boundaries(
+    prior: str, data: dict[str, Any], params: dict[str, Any]
+) -> dict[str, set[str]]:
+    """Get the boundaries of a prior.
+
+    ``prior`` is a prior label.
+    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``params`` is a dict of parameters.
+
+    Returns
+        A set of boundary terms.
+    """
+    terms = _get_prior_terms(prior, data, params)
+    roots_wrapper = params["wrappers"]["roots_wrapper"]
+    if prior in roots_wrapper.keys():
+        roots = roots_wrapper[prior]()
+    else:
+        roots = terms.difference(_get_prior_descendants(terms, prior, data, params))
+
+    tmp = terms.difference(_get_prior_ancestors(terms, prior, data, params))
+    leaves = {
+        t
+        for t in tmp
+        if _get_prior_ancestors({t}, prior, data, params).intersection(roots) != set()
+    }  # filter out terms that do not share an is_a path to a root
+    return {"roots": roots, "leaves": leaves}

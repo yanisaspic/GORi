@@ -88,14 +88,17 @@ def _load_diseases(path: str) -> dict[str, dict[str, Any]]:
     tmp = {meshid: set(parents) for meshid, parents in hierarchy.items()}
     roots = _get_roots_diseases()
     hierarchy = _prune_hierarchy({"hierarchy": tmp}, roots=roots)
-    for r in roots:
-        hierarchy[r] = {}
 
     with open(f"{path}/DISE_t.json", "r") as file:
         translations = json.load(file)
         translations = {
             k: v for k, v in translations.items() if k in hierarchy.keys()
         }  # filter out non-diseases (e.g. molecules)
+
+    # assign a meta-root to the hierarchy:
+    for r in roots:
+        hierarchy[r] = {"disease"}
+    translations["disease"] = "disease"
 
     return {
         "annotations": annotations,
@@ -123,6 +126,13 @@ def _load_gene_groups(path: str) -> dict[str, dict[str, Any]]:
 
     with open(f"{path}/GENG_t.json", "r") as file:
         translations = json.load(file)
+
+    # assign a meta-root to the hierarchy:
+    roots = set(translations.values()).difference(set(hierarchy.keys()))
+    for r in roots:
+        hierarchy[r] = {"gene_group"}
+    roots = set(translations.values()).difference(set(hierarchy.keys()))
+    translations["gene_group"] = "gene_group"
 
     return {
         "annotations": hgnc.hgnc_genegroups(),
@@ -152,6 +162,12 @@ def _load_pathways(path: str) -> dict[str, dict[str, Any]]:
 
     with open(f"{path}/PATH_t.json", "r") as file:
         translations = json.load(file)
+
+    # assign a meta-root to the hierarchy:
+    roots = set(translations.keys()).difference(set(hierarchy.keys()))
+    for r in roots:
+        hierarchy[r] = {"pathway"}
+    translations["pathway"] = "pathway"
 
     return {
         "annotations": annotations,

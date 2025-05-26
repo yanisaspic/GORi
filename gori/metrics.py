@@ -2,67 +2,25 @@
 
     2025/05/13 @yanisaspic"""
 
+import numpy as np
 import pandas as pd
 from math import log2
 from typing import Any
 from gori.params import get_parameters
 from gori.src.utils import (
     _get_prior_ancestors,
+    _get_prior_boundaries,
     _get_prior_descendants,
+    _get_prior_inverse_translation,
+    _get_prior_terms,
+    _get_transaction_matrix,
     _get_prior_translation,
 )
 
 
-def _get_generic_terms(prior: dict[str, dict[str, Any]]) -> set[str]:
-    """Get every term in a knowledge base.
-
-    ``prior`` is a dict with three keys: "annotations", "hierarchy" and "translations".
-
-    Returns
-        A set of terms.
-    """
-    return set(prior["translations"].keys())
-
-
-def _get_prior_terms(
-    prior: str, data: dict[str, Any], params: dict[str, Any]
-) -> set[str]:
-    """Get every term in a knowledge base.
-
-    ``prior`` is a prior label.
-    ``data`` is a dict associating priors (keys) to their contents (values).
-    ``params`` is a dict of parameters.
-
-    Returns
-        A set of terms.
-    """
-    terms_wrapper = params["wrappers"]["terms_wrapper"]
-    if prior in terms_wrapper.keys():
-        return terms_wrapper[prior](data[prior])
-    return _get_generic_terms(data[prior])
-
-
-def _get_prior_limits(
-    prior: str, data: dict[str, Any], params: dict[str, Any]
-) -> dict[str, set[str]]:
-    """Get every root and leaf in a knowledge base.
-
-    ``prior`` is a prior label.
-    ``data`` is a dict associating priors (keys) to their contents (values).
-    ``params`` is a dict of parameters.
-
-    Returns
-        A set of terms.
-    """
-    terms = _get_prior_terms(prior, data, params)
-    roots = terms.difference(_get_prior_descendants(terms, prior, data, params))
-    leaves = terms.difference(_get_prior_ancestors(terms, prior, data, params))
-    return {"roots": roots, "leaves": leaves}
-
-
 def _get_prior_iic0(
     term: str,
-    limits: dict[str, set[str]],
+    boundaries: dict[str, set[str]],
     prior: str,
     data: dict[str, Any],
     params: dict[str, Any],
@@ -81,7 +39,7 @@ def _get_prior_iic0(
     https://doi.org/10.1016/j.knosys.2010.10.001
 
     ``term`` is an annotation term.
-    ``n_limits`` is a dict with the ``roots`` and ``leaves`` count of the prior.
+    ``boundaries`` is a dict with two keys: `roots` and `leaves`.
     ``prior`` is a prior label.
     ``data`` is a dict associating priors (keys) to their contents (values).
     ``params`` is a dict of parameters.
@@ -91,9 +49,9 @@ def _get_prior_iic0(
     """
     subsumers_t = _get_prior_ancestors({term}, prior, data, params) | {term}
     leaves_t = _get_prior_descendants({term}, prior, data, params).intersection(
-        limits["leaves"]
+        boundaries["leaves"]
     )
-    tmp = ((len(leaves_t) / len(subsumers_t)) + 1) / (len(limits["leaves"]) + 1)
+    tmp = ((len(leaves_t) / len(subsumers_t)) + 1) / (len(boundaries["leaves"]) + 1)
     iic = -log2(tmp)
     return iic
 
@@ -112,13 +70,13 @@ def _get_prior_iics(
         A pd.Series associating terms to their iics.
     """
     terms = _get_prior_terms(prior, data, params)
-    limits = _get_prior_limits(prior, data, params)
-    tmp = {t: _get_prior_iic0(t, limits, prior, data, params) for t in terms}
+    boundaries = _get_prior_boundaries(prior, data, params)
+    tmp = {t: _get_prior_iic0(t, boundaries, prior, data, params) for t in terms}
     out = pd.DataFrame.from_dict(tmp, orient="index", columns=["iic"])
     return out
 
 
-def _get_iics(
+def get_iics(
     data: dict[str, Any], params: dict[str, Any] = get_parameters()
 ) -> pd.DataFrame:
     """Get a table associating each annotation term to its raw and normalized IICs, its prior and
@@ -128,7 +86,7 @@ def _get_iics(
     ``params`` is a dict of parameters.
 
     Returns
-        A pd.DataFrame where rows are terms, and four columns: `label`, `iic` and `prior`.
+        A pd.DataFrame where rows are terms, with four columns: `iic`, `label`, `n_iic` and `prior`.
     """
     tmp = []
     for p in data.keys():
@@ -140,16 +98,71 @@ def _get_iics(
         ]
         p_out["prior"] = p
         tmp.append(p_out)
-    iic = pd.concat(tmp)
-    return iic
+    return pd.concat(tmp)
 
 
-def get_prior_eics(
-    corpus: dict[str, set[str]],
+def _setup_eics(
+    associations: pd.DataFrame, data: dict[str, Any], params: dict[str, Any]
+) -> dict[str, dict[str, set[str]]]:
+    """Setup the results of a GORI enrichment analysis to compute the Extrinsic Information Content (EIC) of terms.
+
+    ``associations`` is a pd.DataFrame with nine columns: `antecedents`, `consequents`, `lift`, `pval`, `fdr`,
+        `n_genes`, `genes`, `url_a` and `url_c`.
+    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``params`` is a dict of parameters.
+
+    Returns
+        A dict associating priors (keys) to their group-specific annotation terms (values).
+    """
+    f = np.vectorize(lambda C, P: _get_prior_inverse_translation(C, P, data, params))
+    associations["inverse_consequents"] = f(
+        associations.consequents, associations.prior_c
+    )
+    corpus = {
+        prior: group.groupby("antecedents")["inverse_consequents"].apply(set).to_dict()
+        for prior, group in associations.groupby("prior_c")
+    }
+    return corpus
+
+
+def _get_prior_eics(
     prior: str,
+    corpus: dict[str, dict[str, set[str]]],
+    data: dict[str, Any],
+    params: dict[str, Any],
+) -> pd.DataFrame:
+    """Get the Extrinsic Information Content (EIC) of every term from a prior.
+
+    ``prior`` is a prior label.
+    ``corpus`` is a dict associating some priors (keys) to their group-specific annotation terms (values).
+    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``params`` is a dict of parameters.
+
+    Returns
+        A pd.DataFrame where rows are terms, with four columns: `eic`, `n_eic`, `label` and `prior`.
+    """
+    tmp = {prior: {}}  # type: dict[str, dict[str, set[str]]]
+    for g, terms in corpus[prior].items():
+        lineage = _get_prior_ancestors(terms, prior, data, params) | terms
+        tmp[prior][g] = lineage
+
+    tm = _get_transaction_matrix(tmp)
+    tm = tm.fillna(0)
+    tm = tm.mean(axis=0)
+    tm = tm.apply(lambda x: -log2(x))
+    out = pd.DataFrame(tm, columns=["eic"])
+
+    out["prior"] = prior
+    out["n_eic"] = out.eic / out.eic.max()
+    out["label"] = [_get_prior_translation(t, prior, data, params) for t in out.index]
+    return out
+
+
+def get_eics(
+    corpus: dict[str, dict[str, set[str]]],
     data: dict[str, Any],
     params: dict[str, Any] = get_parameters(),
-) -> dict[str, float]:
+) -> pd.DataFrame:
     """Get the Extrinsic Information Content (EIC) of every term in a corpus. It ranges from 0 to +Inf.
 
     EIC(t) = -log[ p(t) ], where:
@@ -161,11 +174,23 @@ def get_prior_eics(
     arXiv preprint cmp-lg/9511007 (1995).
     See: https://doi.org/10.48550/arXiv.cmp-lg/9511007
 
-    ``corpus`` is a dict associating some group (keys) to their annotation terms (values).
     ``prior`` is a prior label.
+    ``corpus`` is a dict associating some priors (keys) to their group-specific annotation terms (values).
     ``data`` is a dict associating priors (keys) to their contents (values).
     ``params`` is a dict of parameters.
 
     Returns
-        A dict associating terms (keys) to their EIC (values).
+        A pd.DataFrame where rows are terms, with four columns: `eic`, `n_eic`, `label` and `prior`.
     """
+    tmp = []  # type: list[pd.DataFrame]
+    for p in corpus.keys():
+        tmp.append(_get_prior_eics(p, corpus, data, params))
+    eics = pd.concat(tmp)
+
+    corpus_terms = set()  # type: set[str]
+    for prior, _tmp in corpus.items():
+        for group, terms in _tmp.items():
+            corpus_terms = corpus_terms | terms
+
+    eics = eics.loc[list(corpus_terms), :]
+    return eics

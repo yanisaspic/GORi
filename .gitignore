@@ -6,3 +6,4 @@ priors/*
 *.log
 *.pyc
 *.xlsx
+*.csv

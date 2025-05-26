@@ -36,6 +36,12 @@ from gori.src.wrappers._load_wrapper import (
     _load_pathways,
     _load_phenotypes,
 )
+from gori.src.wrappers._roots_wrapper import (
+    _get_biop_roots,
+    _get_celc_roots,
+    _get_ctyp_roots,
+    _get_molf_roots,
+)
 from gori.src.wrappers._setup_wrapper import (
     _setup_cell_types,
     _setup_diseases,
@@ -224,6 +230,20 @@ def resources_wrapper() -> dict[str, dict[str, str]]:
         },
     }
     return wrapper
+
+
+def roots_wrapper() -> dict[str, Callable]:
+    """A wrapper to get the roots of a prior.
+
+    Returns
+        A dict associating priors (keys) to their roots (values).
+    """
+    return {
+        "BIOP": _get_biop_roots,
+        "CELC": _get_celc_roots,
+        "CTYP": _get_ctyp_roots,
+        "MOLF": _get_molf_roots,
+    }
 
 
 def setup_wrapper() -> dict[str, Callable]:

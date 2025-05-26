@@ -7,6 +7,7 @@ from typing import Any, Optional
 from gori.params import get_parameters
 from gori.loaders import load_priors, load_feve
 from gori.src.associations import _get_associations
+from gori.src.lemmas import _get_lemmas_scores, _get_top_lemmas
 from gori.src.annotations import _get_annotations, _get_annotations_counter
 
 
@@ -60,11 +61,13 @@ def gori(
     associations_counter = pd.DataFrame(outs["associations_counter"])
     associations_counter = associations_counter.fillna(0).sort_values(by="prior")
     results["associations_counter"] = associations_counter
+    results["lemmas_scores"] = _get_lemmas_scores(results["associations"])
+    results["top_lemmas"] = _get_top_lemmas(results["lemmas_scores"], data, params)
 
     if sheets:
         with pd.ExcelWriter(params["sheets_path"]) as writer:
             for sheet in results.keys():
-                if sheet == "annotations_counter":
+                if sheet in ["annotations_counter", "lemmas_scores"]:
                     results[sheet].to_excel(writer, sheet_name=sheet)
                 else:
                     results[sheet].to_excel(writer, sheet_name=sheet, index=False)
@@ -74,7 +77,7 @@ def gori(
 def gorilon(
     path: str,
     direction: str = "any",
-    priors: set[str] = {"BIOP", "CTYP", "GENG", "PATH"},
+    priors: set[str] = {"BIOP", "CELC", "CTYP", "GENG", "MOLF", "PATH"},
     priors_path: str = "./priors",
     params: dict[str, Any] = get_parameters(),
     sheets: bool = True,
@@ -92,8 +95,7 @@ def gorilon(
         A dict with three keys: `annotations_counter`, `associations` and `associations_counter`.
     """
     data = load_priors(priors, priors_path, params)
-    feve = load_feve(path, direction)
-    data["FEVE"] = feve
+    data["FEVE"] = load_feve(path, direction)
     geneset = data["FEVE"]["annotations"].keys()
     results = gori(geneset, "FEVE", priors, data, params, sheets)
     return results
