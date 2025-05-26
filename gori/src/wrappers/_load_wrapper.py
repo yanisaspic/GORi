@@ -1,13 +1,13 @@
-"""Functions used by gori.init.load_priors().
+"""Functions used by load_wrapper().
 
-    2025/05/20 @yanisaspic"""
+    2025/05/22 @yanisaspic"""
 
 import json
 import pandas as pd
-from pypath.utils import go
+from typing import Any, Optional
 from pypath.inputs import hpo, hgnc
+from pypath.utils.go import GOAnnotation
 from nxontology.imports import from_file
-from typing import Any
 from gori.src.utils import _prune_hierarchy, _get_uniprot_id
 
 
@@ -18,8 +18,8 @@ def _load_cell_types(path: str) -> dict[str, Any]:
 
     Returns
         A dict with two keys:
-            - "annotations": a dict associating a Uniprot ID to its associated cell types
-            - "ontology": a graph associating a cell type to its parents in the hierarchy and its human-readable label.
+            `annotations`: a dict associating a Uniprot ID to its associated cell types
+            `ontology`: a graph associating a cell type to its parents in the hierarchy and its human-readable label.
     """
     ontology = from_file(f"{path}/CTYP_o.obo").graph
     current_cells = set(ontology.nodes)
@@ -30,7 +30,6 @@ def _load_cell_types(path: str) -> dict[str, Any]:
         uid: set(cells).intersection(current_cells)
         for uid, cells in annotations.items()
     }
-
     return {"annotations": annotations, "ontology": ontology}
 
 
@@ -40,7 +39,7 @@ def _get_roots_diseases() -> set[str]:
     Returns
         A set of MeSH IDs.
     """
-    roots = {
+    return {
         "D000820",  # Animal Diseases
         "D002318",  # Cardiovascular Diseases
         "D064419",  # Chemically-Induced Disorders
@@ -65,7 +64,6 @@ def _get_roots_diseases() -> set[str]:
         "D000091642",  # Urogenital Diseases
         "D014947",  # Wounds and Injuries
     }
-    return roots
 
 
 def _load_diseases(path: str) -> dict[str, dict[str, Any]]:
@@ -75,9 +73,9 @@ def _load_diseases(path: str) -> dict[str, dict[str, Any]]:
 
     Returns
         A dict with three keys:
-            - "annotations": a dict associating a Uniprot ID to its associated diseases
-            - "hierarchy": a dict associating a MeSH ID to its parents in the hierarchy
-            - "translations": a dict associating a MeSH ID to its human-readable label
+            `annotations`: a dict associating a Uniprot ID to its associated diseases
+            `hierarchy`: a dict associating a MeSH ID to its parents in the hierarchy
+            `translations`: a dict associating a MeSH ID to its human-readable label
     """
     with open(f"{path}/DISE_a.json", "r") as file:
         annotations = json.load(file)
@@ -87,11 +85,17 @@ def _load_diseases(path: str) -> dict[str, dict[str, Any]]:
 
     with open(f"{path}/DISE_h.json", "r") as file:
         hierarchy = json.load(file)
-    hierarchy = {meshid: set(parents) for meshid, parents in hierarchy.items()}
-    hierarchy = _prune_hierarchy(hierarchy, roots=_get_roots_diseases())
+    tmp = {meshid: set(parents) for meshid, parents in hierarchy.items()}
+    roots = _get_roots_diseases()
+    hierarchy = _prune_hierarchy({"hierarchy": tmp}, roots=roots)
+    for r in roots:
+        hierarchy[r] = {}
 
     with open(f"{path}/DISE_t.json", "r") as file:
         translations = json.load(file)
+        translations = {
+            k: v for k, v in translations.items() if k in hierarchy.keys()
+        }  # filter out non-diseases (e.g. molecules)
 
     return {
         "annotations": annotations,
@@ -107,9 +111,9 @@ def _load_gene_groups(path: str) -> dict[str, dict[str, Any]]:
 
     Returns
         A dict with three keys:
-            - "annotations": a dict associating a Uniprot ID to its associated gene groups
-            - "hierarchy": a dict associating a gene group to its parents in the hierarchy
-            - "translations": a dict associating a gene group to its human-readable label
+            `annotations`: a dict associating a Uniprot ID to its associated gene groups
+            `hierarchy`: a dict associating a gene group to its parents in the hierarchy
+            `translations`: a dict associating a gene group to its human-readable label
     """
     annotations = hgnc.hgnc_genegroups()
 
@@ -134,9 +138,9 @@ def _load_pathways(path: str) -> dict[str, dict[str, Any]]:
 
     Returns
         A dict with three keys:
-            - "annotations": a dict associating a Uniprot ID to its associated pathways
-            - "hierarchy": a dict associating a pathway to its parents in the hierarchy
-            - "translations": a dict associating a pathway to its human-readable label
+            `annotations`: a dict associating a Uniprot ID to its associated pathways
+            `hierarchy`: a dict associating a pathway to its parents in the hierarchy
+            `translations`: a dict associating a pathway to its human-readable label
     """
     with open(f"{path}/PATH_a.json", "r") as file:
         annotations = json.load(file)
@@ -156,31 +160,36 @@ def _load_pathways(path: str) -> dict[str, dict[str, Any]]:
     }
 
 
-def _get_root_phenotypes() -> set[str]:
-    """Get the root of the phenotypes hierarchy.
+def _get_roots_phenotypes() -> set[str]:
+    """Get the roots of the phenotypes hierarchy.
 
     Returns
         A set of HPO IDs.
     """
-    root = {"HP:0000118"}
-    return root
+    return {"HP:0000118"}
 
 
-def _load_phenotypes(path: None) -> dict[str, dict[str, Any]]:
+def _load_phenotypes(path: Optional[str]) -> dict[str, dict[str, Any]]:
     """Load the phenotypes knowledge base.
 
     ``path`` is a placeholder.
 
     Returns
         A dict with three keys:
-            - "annotations": a dict associating a Uniprot ID to its associated phenotypes
-            - "hierarchy": a dict associating a phenotype to its parents in the hierarchy
-            - "translations": a dict associating a phenotype to its human-readable label
+            `annotations`: a dict associating a Uniprot ID to its associated phenotypes
+            `hierarchy`: a dict associating a phenotype to its parents in the hierarchy
+            `translations`: a dict associating a phenotype to its human-readable label
     """
+    roots = _get_roots_phenotypes()
     annotations = hpo.hpo_annotations()
-    hierarchy = hpo.hpo_ontology()["parents"]
-    hierarchy = _prune_hierarchy(hierarchy, roots=_get_root_phenotypes())
+    tmp = hpo.hpo_ontology()["parents"]
+    hierarchy = _prune_hierarchy({"hierarchy": tmp}, roots=roots)
+    for r in roots:
+        hierarchy[r] = set()
     translations = hpo.hpo_ontology()["terms"]
+    translations = {
+        k: v for k, v in translations.items() if k in hierarchy.keys()
+    }  # filter out non-phenotypes (e.g. onsets)
     return {
         "annotations": annotations,
         "hierarchy": hierarchy,
@@ -188,10 +197,12 @@ def _load_phenotypes(path: None) -> dict[str, dict[str, Any]]:
     }
 
 
-def _load_gene_ontology() -> go.GOAnnotation:
-    """Load the gene ontology knowledge base.
+def _load_gene_ontology(path: Optional[str]) -> GOAnnotation:
+    """Load the Gene Ontology knowledge base.
+
+    ``path`` is a placeholder.
 
     Returns
-        A GOAnnotation object containing the gene ontology.
+        A GOAnnotation object.
     """
-    return go.GOAnnotation()
+    return GOAnnotation()

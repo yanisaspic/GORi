@@ -4,6 +4,9 @@ NAME = "gori"
 VERSION = "0.1"
 DESCRIPTION = "Context-informed genesets annotations."
 LONG_DESCRIPTION = "An algorithm to annotate related genesets, with any knowledge base."
+AUTHOR = "Yanis Asloudj"
+AUTHOR_EMAIL = "yasloudj@u-bordeaux.fr"
+URL = "https://github.com/yanisaspic/GORi"
 KEYWORDS = [
     "geneset annotation",
     "frequent itemset mining",
@@ -11,14 +14,13 @@ KEYWORDS = [
     "semantic enrichment",
     "single-cell",
 ]
-AUTHOR = "Yanis Asloudj"
-AUTHOR_EMAIL = "yasloudj@u-bordeaux.fr"
-URL = "https://github.com/yanisaspic/GORi"
-
+PYTHON = ">=3.9"
 REQUIREMENTS = [
+    "beautifulsoup4>=4.12.3",
     "itables>=2.2.4",
     "mlxtend>=0.23.1",
     "networkx>=3.2",
+    "nltk>=3.9.1",
     "nxontology>=0.5.0",
     "pandas>=1.4.4",
     "pipreqs>=0.5.0",
@@ -40,7 +42,7 @@ setup(
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     url=URL,
-    python_requires=">=3.9",
+    python_requires=PYTHON,
     install_requires=REQUIREMENTS,
     packages=find_packages(),
 )

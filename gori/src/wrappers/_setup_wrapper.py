@@ -1,4 +1,4 @@
-"""Functions used by gori.init.setup_priors().
+"""Functions used by setup_wrapper().
 
     2025/05/20 @yanisaspic"""
 
@@ -15,6 +15,7 @@ def _setup_cell_types(dl_path: str, su_path: str) -> None:
 
     ``dl_path`` is a path where downloaded files are stored.
     ``su_path`` is a path to store the set-up files.
+
     """
     _dl_path = f"{dl_path}/cell_types"
     annotations = pd.read_csv(f"{_dl_path}/CellTaxonomy_annotations.csv")

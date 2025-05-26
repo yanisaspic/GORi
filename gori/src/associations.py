@@ -1,4 +1,4 @@
-"""Function called to obtain every association between two knowledge bases.
+"""Functions called to obtain every association between two knowledge bases.
 
     2025/05/13 @yanisaspic"""
 
@@ -15,30 +15,8 @@ from gori.src.utils import (
     _get_prior_descendants,
     _get_prior_translation,
     _get_prior_url,
+    _get_transaction_matrix,
 )
-
-
-def _get_transaction_matrix(
-    annotations: dict[str, dict[str, set[str]]]
-) -> pd.DataFrame:
-    """Get a transaction matrix from a set of annotations.
-
-    ``annotations`` is a dict associating priors (keys) to their gene-specific annotations (values).
-
-    Returns
-        A binary pd.DataFrame where rows are genes, columns are annotations, and cell values indicate
-        if a gene i is annotated by a term j.
-    """
-    tmp = []
-    for prior in annotations.keys():
-        te = TransactionEncoder()
-        te_ary = te.fit(annotations[prior].values()).transform(
-            annotations[prior].values()
-        )
-        tm = pd.DataFrame(te_ary, columns=te.columns_, index=annotations[prior].keys())
-        tmp.append(tm)
-    transaction_matrix = pd.concat(tmp, axis=1)
-    return transaction_matrix
 
 
 def _get_all_associations(
@@ -131,7 +109,7 @@ def _get_significant_associations(
 
     ``associations`` is a pd.DataFrame with five or more columns: `antecedents`, `consequents`, `lift`, `prior_a` and `prior_c`.
     ``transaction_matrix`` is a binary pd.DataFrame where rows are genes and columns are annotations.
-    ``params`` is a dict with parameters for the GORi enrichment analysis.
+    ``params`` is a dict of parameters.
     ``fdr`` is a boolean indicating if the p-values should be corrected for multiple testing.
 
     Returns
@@ -153,7 +131,7 @@ def _get_lift_threshold(
 
     ``associations`` is a pd.DataFrame with five columns: `antecedents`, `consequents`, `lift`, `prior_a` and `prior_c`.
     ``transaction_matrix`` is a binary pd.DataFrame where rows are genes and columns are annotations.
-    ``params`` is a dict with parameters for the GORi enrichment analysis.
+    ``params`` is a dict of parameters.
 
     Returns
         A float.
@@ -185,7 +163,7 @@ def _get_strong_associations(
 
     ``associations`` is a pd.DataFrame with five columns: `antecedents`, `consequents`, `lift`, `prior_a` and `prior_c`.
     ``transaction_matrix`` is a binary pd.DataFrame where rows are genes and columns are annotations.
-    ``params`` is a dict with parameters for the GORi enrichment analysis.
+    ``params`` is a dict of parameters.
 
     Returns
         A pd.DataFrame with five or more columns: `antecedents`, `consequents`, `lift`, `prior_a`, `prior_c` and `pval`
@@ -199,33 +177,35 @@ def _get_strong_associations(
     return associations
 
 
-def _get_unique_terms(terms: set[str], prior: str, data: dict[str, Any]) -> set[str]:
+def _get_unique_terms(
+    terms: set[str], prior: str, data: dict[str, Any], params: dict[str, Any]
+) -> set[str]:
     """Get unique terms, i.e. terms that are not redundant with each other.
 
     ``terms`` is a set of annotation terms.
     ``prior`` is a prior label.
     ``data`` is a dict associating priors (keys) to their contents (values).
+    ``params`` is a dict of parameters.
 
     Returns
         A set of annotation terms.
     """
     tmp = {t.split(":", 1)[1] for t in terms}
-    ancestors = _get_prior_ancestors(tmp, prior, data)
+    ancestors = _get_prior_ancestors(tmp, prior, data, params)
     unique_terms = tmp.difference(ancestors)
     out = {f"{prior}:{t}" for t in unique_terms}
     return out
 
 
 def _get_unique_indexes(
-    a: str,
-    associations: pd.DataFrame,
-    data: dict[str, Any],
+    a: str, associations: pd.DataFrame, data: dict[str, Any], params: dict[str, Any]
 ) -> pd.DataFrame:
     """Get unique indexes.
 
     ``a`` is an annotation term, and antecedent.
     ``associations`` is a pd.DataFrame with six columns: `antecedents`, `consequents`, `lift`, `prior_a`, `prior_c` and `pval`.
     ``data`` is a dict associating priors (keys) to their contents (values).
+    ``params`` is a dict of parameters.
 
     Returns
         A pd.DataFrame with six columns: `antecedents`, `consequents`, `lift`, `prior_a`, `prior_c` and
@@ -233,11 +213,13 @@ def _get_unique_indexes(
     """
     tmp = associations.loc[associations.antecedents == a]
     terms = set(tmp.consequents)
-    unique_terms = _get_unique_terms(terms, associations.prior_c.iloc[0], data)
+    unique_terms = _get_unique_terms(terms, associations.prior_c.iloc[0], data, params)
 
     # remove t_{n+x} and t_{n-x} from consequents:
-    ancestors = _get_prior_ancestors({a}, associations.prior_a.iloc[0], data)
-    descendants = _get_prior_descendants({a}, associations.prior_a.iloc[0], data)
+    ancestors = _get_prior_ancestors({a}, associations.prior_a.iloc[0], data, params)
+    descendants = _get_prior_descendants(
+        {a}, associations.prior_a.iloc[0], data, params
+    )
     throwaway = ancestors | descendants
 
     unique_terms = unique_terms.difference(throwaway)
@@ -246,19 +228,21 @@ def _get_unique_indexes(
 
 
 def _get_unique_associations(
-    associations: pd.DataFrame, data: dict[str, Any]
+    associations: pd.DataFrame, data: dict[str, Any], params: dict[str, Any]
 ) -> pd.DataFrame:
     """Get unique associations.
 
     ``associations`` is a pd.DataFrame with six columns: `antecedents`, `consequents`, `lift`, `prior_a`, `prior_c` and `pval`.
     ``data`` is a dict associating priors (keys) to their contents (values).
+    ``params`` is a dict of parameters.
 
     Returns
         A pd.DataFrame with six columns: `antecedents`, `consequents`, `lift`, `prior_a`, `prior_c` and
         `pval`.
     """
     f = np.vectorize(
-        lambda A: _get_unique_indexes(A, associations, data), otypes=[np.ndarray]
+        lambda A: _get_unique_indexes(A, associations, data, params),
+        otypes=[np.ndarray],
     )
     unique_indexes = f(associations.antecedents.unique())
     unique_indexes = np.hstack(unique_indexes)
@@ -283,13 +267,17 @@ def _get_association_genes(
 
 
 def _enrich_associations(
-    associations: pd.DataFrame, data: dict[str, Any], transaction_matrix: pd.DataFrame
+    associations: pd.DataFrame,
+    data: dict[str, Any],
+    transaction_matrix: pd.DataFrame,
+    params: dict[str, Any],
 ) -> pd.DataFrame:
     """Enrich associations with their genes, urls and human-readable translations.
 
     ``associations`` is a pd.DataFrame with seven columns: `antecedents`, `consequents`, `lift`,
     `prior_a`, `prior_c`, `pval` and `fdr`.
     ``data`` is a dict associating priors (keys) to their contents (values).
+    ``params`` is a dict of parameters.
 
     Returns
         A pd.DataFrame with eleven columns: `antecedents`, `consequents`, `lift`,
@@ -303,8 +291,10 @@ def _enrich_associations(
     associations["n_genes"] = [len(g) for g in genes]
     associations["genes"] = [", ".join(g) for g in genes]
 
-    g = np.vectorize(lambda X, P: _get_prior_url(X, P, data))
-    h = np.vectorize(lambda X, P: _get_prior_translation(X, P, data))
+    g = np.vectorize(lambda X, P: _get_prior_url(X, P, data, params))
+    h = np.vectorize(
+        lambda X, P: _get_prior_translation(X, P, data, params, has_prefix=True)
+    )
     for col in ["antecedents", "consequents"]:
         p = f"prior_{col[0]}"
         associations[f"url_{col[0]}"] = g(associations[col], associations[p])
@@ -319,13 +309,13 @@ def _get_associations(
     annotations: dict[str, dict[str, set[str]]],
     data: dict[str, Any],
     params: dict[str, Any],
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any]:
     """Get relevant associations between two knowledge bases.
 
     ``antecedent_prior`` and ``consequent_prior`` are prior labels.
     ``annotations`` is a dict associating priors (keys) to their gene-specific annotations (values).
     ``data`` is a dict associating priors (keys) to their contents (values).
-    ``params`` is a dict with parameters for the GORi enrichment analysis.
+    ``params`` is a dict of parameters.
 
     Returns
         A pd.DataFrame with nine columns: `antecedents`, `consequents`, `lift`, `pval`, `fdr`,
@@ -370,7 +360,7 @@ def _get_associations(
             break
 
         # Associations are filtered by redundancy
-        associations = _get_unique_associations(associations, data)
+        associations = _get_unique_associations(associations, data, params)
         associations_counter["unique"] = len(associations.index)
         # Associations are filtered by statistical significance
         associations = _get_significant_associations(
@@ -381,7 +371,9 @@ def _get_associations(
             print(f"No associations found with corrected p-values.")
             break
 
-        associations = _enrich_associations(associations, data, transaction_matrix)
+        associations = _enrich_associations(
+            associations, data, transaction_matrix, params
+        )
         break
 
     print(associations_counter)
