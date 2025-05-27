@@ -22,18 +22,18 @@ def _download_cell_types(path: str, params: dict[str, Any]) -> None:
     if not os.path.isdir(_path):
         os.mkdir(_path)
 
-    resources = params["resources_wrapper"]["CTYP"]
+    resources = params["wrappers"]["resources_wrapper"]["CTYP"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
             urlretrieve(url, f"{_path}/{file}")
             log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
 
-    annotations = pd.read_csv(f"{_path}/raw_CellTaxonomy_annotations.txt", sep="\t")
-    annotations = annotations.loc[annotations.Species == "Homo sapiens"]
-    annotations = annotations[["Specific_Cell_Ontology_ID", "Uniprot"]]
+    annotations = pd.read_excel(f"{_path}/raw_CellMarker2_annotations.xlsx")
+    annotations = annotations[["cellontology_id", "UNIPROTID"]]
     annotations = annotations.dropna()
-    annotations.to_csv(f"{_path}/CellTaxonomy_annotations.csv")
-    os.remove(f"{_path}/raw_CellTaxonomy_annotations.txt")
+    annotations.cellontology_id = [i.replace("_", ":") for i in annotations.cellontology_id]
+    annotations.to_csv(f"{_path}/CellMarker2_annotations.csv")
+    os.remove(f"{_path}/raw_CellMarker2_annotations.xlsx")
 
 
 def _download_diseases(path: str, params: dict[str, Any]) -> None:
@@ -47,7 +47,7 @@ def _download_diseases(path: str, params: dict[str, Any]) -> None:
     if not os.path.isdir(_path):
         os.mkdir(_path)
 
-    resources = params["resources_wrapper"]["DISE"]
+    resources = params["wrappers"]["resources_wrapper"]["DISE"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
             urlretrieve(url, f"{_path}/{file}")
@@ -77,7 +77,7 @@ def _download_gene_groups(path: str, params: dict[str, Any]) -> None:
     if not os.path.isdir(_path):
         os.mkdir(_path)
 
-    resources = params["resources_wrapper"]["GENG"]
+    resources = params["wrappers"]["resources_wrapper"]["GENG"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
             urlretrieve(url, f"{_path}/{file}")
@@ -95,7 +95,7 @@ def _download_pathways(path: str, params: dict[str, Any]) -> None:
     if not os.path.isdir(_path):
         os.mkdir(_path)
 
-    resources = params["resources_wrapper"]["PATH"]
+    resources = params["wrappers"]["resources_wrapper"]["PATH"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
             urlretrieve(url, f"{_path}/{file}")

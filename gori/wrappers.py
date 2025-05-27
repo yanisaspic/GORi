@@ -211,7 +211,7 @@ def resources_wrapper() -> dict[str, dict[str, str]]:
     """
     wrapper = {
         "CTYP": {
-            "raw_CellTaxonomy_annotations.txt": "https://download.cncb.ac.cn/celltaxonomy/Cell_Taxonomy_resource.txt",
+            "raw_CellMarker2_annotations.xlsx": "http://www.bio-bigdata.center/CellMarker_download_files/file/Cell_marker_Human.xlsx",
             "cell_types_ontology.obo": "https://purl.obolibrary.org/obo/cl/cl-basic.obo",
         },
         "DISE": {

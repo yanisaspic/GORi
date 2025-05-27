@@ -5,5 +5,4 @@ priors/*
 .priors/*
 *.log
 *.pyc
-*.xlsx
 *.csv

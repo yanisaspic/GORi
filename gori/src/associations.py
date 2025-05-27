@@ -345,9 +345,8 @@ def _get_associations(
             break
 
         # Associations are filtered by strength
-        f = lambda x: "heuristic" if x else "naive"
         associations = associations.sort_values(
-            by="lift", ascending=False
+            by=["lift", "antecedents", "consequents"], ascending=[False, True, True]
         )  # sort by association strength
         associations = _get_strong_associations(
             associations, transaction_matrix, params

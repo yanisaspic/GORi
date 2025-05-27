@@ -18,12 +18,8 @@ def _setup_cell_types(dl_path: str, su_path: str) -> None:
 
     """
     _dl_path = f"{dl_path}/cell_types"
-    annotations = pd.read_csv(f"{_dl_path}/CellTaxonomy_annotations.csv")
-    # split rows with multiple uniprot ids into multiple rows with a single id:
-    annotations = annotations.assign(
-        Uniprot=annotations.Uniprot.str.split(",")
-    ).explode("Uniprot")
-    annotations = annotations.groupby("Uniprot")["Specific_Cell_Ontology_ID"].apply(
+    annotations = pd.read_csv(f"{_dl_path}/CellMarker2_annotations.csv", index_col=0)
+    annotations = annotations.groupby("UNIPROTID")["cellontology_id"].apply(
         list
     )
     annotations = annotations.to_dict()
