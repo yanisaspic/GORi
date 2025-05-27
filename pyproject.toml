@@ -2,7 +2,7 @@
 requires = ["setuptools>=69.2.0"]
 build-backend = "setuptools.build_meta"
 
-[project]
+[package]
 name = "gori"
 version = "0.1"
 description = "Context-informed genesets annotations. GORi is an algorithm to annotate related genesets, with any knowledge base."
