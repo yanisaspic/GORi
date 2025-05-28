@@ -20,7 +20,6 @@ REQUIREMENTS = [
     "itables>=2.2.4",
     "mlxtend>=0.23.1",
     "networkx>=3.2",
-    "nltk>=3.9.1",
     "notebook>=7.4.3",
     "nxontology>=0.5.0",
     "pandas>=1.4.4",

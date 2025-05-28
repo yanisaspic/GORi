@@ -7,7 +7,7 @@ from typing import Any, Optional
 from gori.params import get_parameters
 from gori.loaders import load_priors, load_feve
 from gori.src.associations import _get_associations
-from gori.src.lemmas import _get_lemmas_scores, _get_top_lemmas
+from gori.src.words import _get_words_scores
 from gori.src.annotations import _get_annotations, _get_annotations_counter
 
 
@@ -29,7 +29,7 @@ def gori(
     ``sheets`` is a boolean indicating if the results should be saved in a spreadsheet.
 
     Returns
-        A dict with three keys: `annotations_counter`, `associations` and `associations_counter`.
+        A dict with four keys: `annotations_counter`, `associations`, `associations_counter` and `words`.
     """
     results = {}
     outs = {
@@ -61,13 +61,12 @@ def gori(
     associations_counter = pd.DataFrame(outs["associations_counter"])
     associations_counter = associations_counter.fillna(0).sort_values(by="prior")
     results["associations_counter"] = associations_counter
-    results["lemmas_scores"] = _get_lemmas_scores(results["associations"])
-    results["top_lemmas"] = _get_top_lemmas(results["lemmas_scores"], data, params)
+    results["words"] = _get_words_scores(results["associations"], data, params)
 
     if sheets:
         with pd.ExcelWriter(params["sheets_path"]) as writer:
             for sheet in results.keys():
-                if sheet in ["annotations_counter", "lemmas_scores"]:
+                if sheet in ["annotations_counter", "words"]:
                     results[sheet].to_excel(writer, sheet_name=sheet)
                 else:
                     results[sheet].to_excel(writer, sheet_name=sheet, index=False)
@@ -92,7 +91,7 @@ def gorilon(
     ``sheets`` is a boolean indicating if the results should be saved in a spreadsheet.
 
     Returns
-        A dict with three keys: `annotations_counter`, `associations` and `associations_counter`.
+        A dict with three keys: `annotations_counter`, `associations`, `associations_counter` and `words`.
     """
     data = load_priors(priors, priors_path, params)
     data["FEVE"] = load_feve(path, direction)

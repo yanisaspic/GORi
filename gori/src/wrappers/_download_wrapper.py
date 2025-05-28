@@ -31,7 +31,9 @@ def _download_cell_types(path: str, params: dict[str, Any]) -> None:
     annotations = pd.read_excel(f"{_path}/raw_CellMarker2_annotations.xlsx")
     annotations = annotations[["cellontology_id", "UNIPROTID"]]
     annotations = annotations.dropna()
-    annotations.cellontology_id = [i.replace("_", ":") for i in annotations.cellontology_id]
+    annotations.cellontology_id = [
+        i.replace("_", ":") for i in annotations.cellontology_id
+    ]
     annotations.to_csv(f"{_path}/CellMarker2_annotations.csv")
     os.remove(f"{_path}/raw_CellMarker2_annotations.xlsx")
 

@@ -19,9 +19,7 @@ def _setup_cell_types(dl_path: str, su_path: str) -> None:
     """
     _dl_path = f"{dl_path}/cell_types"
     annotations = pd.read_csv(f"{_dl_path}/CellMarker2_annotations.csv", index_col=0)
-    annotations = annotations.groupby("UNIPROTID")["cellontology_id"].apply(
-        list
-    )
+    annotations = annotations.groupby("UNIPROTID")["cellontology_id"].apply(list)
     annotations = annotations.to_dict()
     with open(f"{su_path}/CTYP_a.json", "w") as file:
         json.dump(annotations, file)
