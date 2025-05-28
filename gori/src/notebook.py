@@ -12,7 +12,7 @@ def _get_notebook_template() -> str:
     """Get a Jupyter Notebook template for GORi.
 
     Returns
-        A string with the Jupyter Notebook template. 
+        A string with the Jupyter Notebook template.
         The placeholder `PLACEHOLDER_HERE` should be replaced with a path to GORi spreadsheets.
     """
     return """ {
