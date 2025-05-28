@@ -5,9 +5,7 @@
 import time
 import datetime
 import pandas as pd
-import networkx as nx
-from pypath.utils.go import GOAnnotation
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 from pypath.utils.mapping import id_from_label
 from mlxtend.preprocessing import TransactionEncoder
 

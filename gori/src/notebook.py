@@ -3,7 +3,6 @@
     2025/05/28 @yanisaspic"""
 
 
-import nbformat
 from typing import Any
 from nbconvert.preprocessors import ExecutePreprocessor
 

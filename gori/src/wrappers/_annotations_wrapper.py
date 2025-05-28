@@ -2,10 +2,7 @@
 
     2025/05/22 @yanisaspic"""
 
-import pandas as pd
 from typing import Any
-from pypath.utils.go import GOAnnotation
-from pypath.utils.mapping import label as gene_symbol
 from gori.src.utils import _get_prior_ancestors
 
 

@@ -5,7 +5,7 @@
 import os
 import gzip
 import pandas as pd
-from typing import Any, Callable
+from typing import Any
 from shutil import copyfileobj
 from urllib.request import urlretrieve
 from gori.src.utils import _get_timestamp

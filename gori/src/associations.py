@@ -5,9 +5,8 @@
 import numpy as np
 import pandas as pd
 import numpy.typing as npt
-from typing import Any, Optional
+from typing import Any
 from scipy.stats import fisher_exact
-from mlxtend.preprocessing import TransactionEncoder
 from statsmodels.stats.multitest import fdrcorrection
 from mlxtend.frequent_patterns import fpgrowth, association_rules
 from gori.src.utils import (

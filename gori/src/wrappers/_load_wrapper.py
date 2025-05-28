@@ -3,7 +3,6 @@
     2025/05/22 @yanisaspic"""
 
 import json
-import pandas as pd
 from typing import Any, Optional
 from pypath.inputs import hpo, hgnc
 from pypath.utils.go import GOAnnotation

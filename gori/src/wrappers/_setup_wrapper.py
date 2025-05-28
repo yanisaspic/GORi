@@ -6,7 +6,7 @@ import os
 import re
 import json
 import pandas as pd
-from typing import Any, Callable
+from typing import Any
 from gori.src.utils import _get_uniprot_id
 
 
