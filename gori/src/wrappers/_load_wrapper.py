@@ -135,7 +135,7 @@ def _load_gene_groups(path: str) -> dict[str, dict[str, Any]]:
     translations["gene_group"] = "gene_group"
 
     return {
-        "annotations": hgnc.hgnc_genegroups(),
+        "annotations": annotations,
         "hierarchy": hierarchy,
         "translations": translations,
     }

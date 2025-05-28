@@ -250,6 +250,7 @@ def get_parameters() -> dict[str, Any]:
         `heuristic` is a boolean indicating if the heuristic approach should be used by GORi.
         `use_gene_symbol` is a boolean indicating if the gene symbols should be used.
         `sheets_path` is a path where the results of the analysis will be stored.
+        "notebook_path" is a path where the notebook will be stored.
         `wrappers` is a dict of prior-specifc functions.
         `stopwords` is a set of words that should not be used in GORi.
 
@@ -263,6 +264,7 @@ def get_parameters() -> dict[str, Any]:
         "use_heuristic": True,
         "use_gene_symbol": True,
         "sheets_path": "./GORi.xlsx",
+        "notebook_path": "./GORi.ipynb",
         "wrappers": _get_wrappers(),
         "stopwords": _get_stopwords(),
     }

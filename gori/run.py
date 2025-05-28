@@ -6,8 +6,9 @@ import pandas as pd
 from typing import Any, Optional
 from gori.params import get_parameters
 from gori.loaders import load_priors, load_feve
-from gori.src.associations import _get_associations
 from gori.src.words import _get_words_scores
+from gori.src.notebook import _write_notebook
+from gori.src.associations import _get_associations
 from gori.src.annotations import _get_annotations, _get_annotations_counter
 
 
@@ -17,7 +18,7 @@ def gori(
     consequent_priors: set[str],
     data: dict[str, Any],
     params: dict[str, Any] = get_parameters(),
-    sheets: bool = True,
+    save: bool = True,
 ) -> Optional[dict[str, pd.DataFrame]]:
     """Conduct a GORi enrichment analysis.
 
@@ -26,7 +27,7 @@ def gori(
     ``consequent_priors`` is a set of prior labels.
     ``data`` is a dict associating priors (keys) to their contents (values).
     ``params`` is a dict of parameters.
-    ``sheets`` is a boolean indicating if the results should be saved in a spreadsheet.
+    ``save`` is a boolean indicating if the results should be saved in a spreadsheet and a notebook.
 
     Returns
         A dict with four keys: `annotations_counter`, `associations`, `associations_counter` and `words`.
@@ -63,13 +64,14 @@ def gori(
     results["associations_counter"] = associations_counter
     results["words"] = _get_words_scores(results["associations"], data, params)
 
-    if sheets:
+    if save:
         with pd.ExcelWriter(params["sheets_path"]) as writer:
             for sheet in results.keys():
                 if sheet in ["annotations_counter", "words"]:
                     results[sheet].to_excel(writer, sheet_name=sheet)
                 else:
                     results[sheet].to_excel(writer, sheet_name=sheet, index=False)
+        _write_notebook(params)
     return results
 
 
@@ -79,7 +81,7 @@ def gorilon(
     priors: set[str] = {"BIOP", "CELC", "CTYP", "GENG", "MOLF", "PATH"},
     priors_path: str = "./priors",
     params: dict[str, Any] = get_parameters(),
-    sheets: bool = True,
+    save: bool = True,
 ) -> Optional[dict[str, pd.DataFrame]]:
     """Conduct a GORi analysis on the results of a fEVE analysis.
 
@@ -88,7 +90,7 @@ def gorilon(
     ``priors`` is a set of prior labels.
     ``priors_path`` is the path to the JSON files containing the knowledge bases.
     ``params`` is a dict of parameters.
-    ``sheets`` is a boolean indicating if the results should be saved in a spreadsheet.
+    ``save`` is a boolean indicating if the results should be saved in a spreadsheet and a notebook.
 
     Returns
         A dict with three keys: `annotations_counter`, `associations`, `associations_counter` and `words`.
@@ -96,5 +98,5 @@ def gorilon(
     data = load_priors(priors, priors_path, params)
     data["FEVE"] = load_feve(path, direction)
     geneset = data["FEVE"]["annotations"].keys()
-    results = gori(geneset, "FEVE", priors, data, params, sheets)
+    results = gori(geneset, "FEVE", priors, data, params, save)
     return results
