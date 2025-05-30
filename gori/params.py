@@ -29,6 +29,7 @@ def _get_stopwords() -> set[str]:
         A set of stopwords.
     """
     return {
+        "-",
         "a",
         "about",
         "above",

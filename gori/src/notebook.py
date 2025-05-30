@@ -290,10 +290,13 @@ def _write_notebook(params: dict[str, Any]) -> None:
     template = _get_notebook_template()
     template = template.replace("PLACEHOLDER_SHEETS_PATH", params["sheets_path"])
     template = template.replace("PLACEHOLDER_USE_GENE_SYMBOL", str(params["use_gene_symbol"]))
-    with open("./.tmp.ipynb", "w", encoding="utf-8") as f:
+    
+    hashcode = str(hash(params["sheets_path"] + params["report_path"]))
+    ipynb_path = f"./.{hashcode}.ipynb"
+    with open(ipynb_path, "w", encoding="utf-8") as f:
         f.write(template)
     
-    with open("./.tmp.ipynb") as f:
+    with open(ipynb_path) as f:
         nb_in = nbformat.read(f, nbformat.NO_CONVERT)
     ep = ExecutePreprocessor(timeout=600, kernel_name="python3")
     nb_out = ep.preprocess(nb_in)
@@ -303,4 +306,4 @@ def _write_notebook(params: dict[str, Any]) -> None:
 
     with open(params["report_path"], "w", encoding="utf-8") as f:
         f.write(body)
-    os.remove("./.tmp.ipynb")
+    os.remove(ipynb_path)

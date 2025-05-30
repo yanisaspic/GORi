@@ -30,7 +30,9 @@ def _get_uniprot_id(gene: str) -> str:
     Returns
         A UniProtID.
     """
+    print(gene)
     uids = id_from_label(gene)  # use id_from_label to get a stable output.
+    print(uids)
     tmp = sorted(list(uids))
     uid = tmp[0]
     if len(uids) > 1:
