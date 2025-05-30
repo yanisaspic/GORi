@@ -6,8 +6,22 @@ import time
 import datetime
 import pandas as pd
 from typing import Any, Optional
-from pypath.utils.mapping import id_from_label
+from pypath.utils.mapping import label, id_from_label
 from mlxtend.preprocessing import TransactionEncoder
+
+
+def _get_gene_symbol(gene: str) -> str:
+    """Get a gene symbol.
+
+    ``gene`` is a gene symbol (or a UniProtID).
+
+    Returns
+        A gene symbol.
+    """
+    try:
+        return label(gene)
+    except TypeError:   # prevents errors from wrongfully querying mir-base.
+        return gene
 
 
 def _get_timestamp() -> str:
@@ -30,9 +44,7 @@ def _get_uniprot_id(gene: str) -> str:
     Returns
         A UniProtID.
     """
-    print(gene)
     uids = id_from_label(gene)  # use id_from_label to get a stable output.
-    print(uids)
     tmp = sorted(list(uids))
     uid = tmp[0]
     if len(uids) > 1:

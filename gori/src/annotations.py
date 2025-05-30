@@ -4,8 +4,7 @@
 
 import pandas as pd
 from typing import Any
-from pypath.utils.mapping import label as gene_symbol
-from gori.src.utils import _get_uniprot_id, _get_prior_ancestors
+from gori.src.utils import _get_uniprot_id, _get_prior_ancestors, _get_gene_symbol
 
 
 def _get_generic_annotations(
@@ -62,7 +61,7 @@ def _get_annotations(
     Returns
         A dict associating priors (keys) to their gene-specific annotations.
     """
-    f = lambda gene: gene_symbol(gene) if params["use_gene_symbol"] else gene
+    f = lambda gene: _get_gene_symbol(gene) if params["use_gene_symbol"] else gene
     annotations = {
         prior: {
             f(gene): _get_prior_annotations(_get_uniprot_id(gene), prior, data, params)
