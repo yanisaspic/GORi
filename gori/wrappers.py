@@ -2,7 +2,7 @@
 
     2025/05/22 @yanisaspic"""
 
-from typing import Any, Callable, Optional
+from typing import Callable
 from gori.src.wrappers._ancestors_wrapper import _get_ctyp_ancestors, _get_go_ancestors
 from gori.src.wrappers._annotations_wrapper import (
     _get_biop_annotations,

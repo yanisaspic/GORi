@@ -71,4 +71,5 @@ def _get_words_scores(
 
     scores = pd.concat(_scores, axis=1)
     scores = scores.drop(root_words, axis=0, errors="ignore")
+    scores.index.name = "word"
     return scores

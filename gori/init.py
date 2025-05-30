@@ -3,6 +3,7 @@
     2025/05/23 @yanisaspic"""
 
 import os
+import shutil
 from typing import Any
 from gori.params import get_parameters
 from gori.src.utils import _get_timestamp
@@ -43,6 +44,7 @@ def setup_priors(
     priors: set[str] = {"CTYP", "GENG", "PATH"},
     dl_path: str = "./.priors",
     su_path: str = "./priors",
+    remove_dl: bool = True,
     params: dict[str, Any] = get_parameters(),
 ) -> None:
     """Set-up priors exploitable for a GORi annotation analysis.
@@ -50,6 +52,7 @@ def setup_priors(
     ``priors`` is a set of valid knowledge categories (e.g. CTYP).
     ``dl_path`` is a path where downloaded files are stored.
     ``su_path`` is a path to store the set-up files.
+    ``remove_dl`` is a boolean indicating if downloaded files should be removed after the setup.
     ``params`` is a dict of parameters.
 
     """
@@ -58,3 +61,5 @@ def setup_priors(
         os.mkdir(su_path)
     for p in priors:
         setup_wrapper[p](dl_path, su_path)
+    if remove_dl:
+        shutil.rmtree(dl_path)
