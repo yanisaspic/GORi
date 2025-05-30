@@ -10,18 +10,18 @@ from pypath.utils.mapping import label, id_from_label
 from mlxtend.preprocessing import TransactionEncoder
 
 
-# def _get_gene_symbol(gene: str) -> str:
-#     """Get a gene symbol.
+def _get_gene_symbol(gene: str) -> str:
+    """Get a gene symbol.
 
-#     ``gene`` is a gene symbol (or a UniProtID).
+    ``gene`` is a gene symbol (or a UniProtID).
 
-#     Returns
-#         A gene symbol.
-#     """
-#     try:
-#         return label(gene)
-#     except TypeError:   # prevents errors from wrongfully querying mir-base.
-#         return gene
+    Returns
+        A gene symbol.
+    """
+    try:
+        return label(gene)
+    except TypeError:   # prevents errors from wrongfully querying mir-base.
+        return gene
 
 
 def _get_timestamp() -> str:
