@@ -5,19 +5,12 @@ GORi is an algorithm developed to conduct enrichment analyses on a pool of genes
 Currently, eight types of annotations can be leveraged with GORi:
 
 - **biological processes (BIOP)**, from the Gene Ontology (GO).
-
 - **cellular components (CELC)**, from the Gene Ontology (GO).
-
-- **cell types (CTYP)**, from CellMarker 2.0 ans the Cell Ontology (CL).
-
+- **cell types (CTYP)**, from CellMarker 2.0 and the Cell Ontology (CL).
 - **diseases (DISE)**, from the Comparative Toxicogenomics Database (CTD) and the Medical Subject Headings (MeSH).
-
 - **gene groups (GENG)**, from the HUGO Gene Nomenclature Committee (HGNC).
-
 - **molecular functions (MOLF)**, from the Gene Ontology (GO).
-
 - **pathways (PATH)**, from Reactome.
-
 - **phenotypes (PHEN)**, from the Human Phenotype Ontology (HPO).
 
 ## Installation
@@ -30,4 +23,5 @@ pip3 install git+https://github.com/yanisaspic/GORi.git
 
 ## Overview of the GORi algorithm
 
--   A tutorial on how to use GORi is available as a Jupyter Notebook on this repostiory, at `./docs/gori.ipynb`.
+- A tutorial on how to use GORi is available as a Jupyter Notebook on this repostiory: `./docs/gori.ipynb`.
+- A demo dataset for the tutorial is also available on this repository: `./data/Darmanis_HumGBM.xlsx`  
