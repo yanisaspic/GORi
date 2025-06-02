@@ -18,7 +18,8 @@ def load_priors(
     ``priors`` is a set of strings containing the names of the knowledge bases to load, including:
         `BIOP` (biological processes),
         `CELC` (cellular components),
-        `CTYP` (cell types),
+        `CTYP` (cell types with CellMarker 2.0 annotations),
+        `CTYP2` (cell types with CellTaxonomy annotations),
         `DISE` (diseases),
         `GENG` (gene groups),
         `MOLF` (molecular functions),

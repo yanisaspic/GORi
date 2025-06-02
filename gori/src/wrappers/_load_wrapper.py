@@ -10,10 +10,11 @@ from nxontology.imports import from_file
 from gori.src.utils import _prune_hierarchy, _get_uniprot_id
 
 
-def _load_cell_types(path: str) -> dict[str, Any]:
+def _load_cell_types(path: str, label: str) -> dict[str, Any]:
     """Load the cell types knowledge base.
 
     ``path`` is the path to the JSON and OBO files containing the cell types knowledge base.
+    ``label`` is one of CTYP or CTYP2.
 
     Returns
         A dict with two keys:
@@ -23,13 +24,39 @@ def _load_cell_types(path: str) -> dict[str, Any]:
     ontology = from_file(f"{path}/CTYP_o.obo").graph
     current_cells = set(ontology.nodes)
 
-    with open(f"{path}/CTYP_a.json", "r") as file:
+    with open(f"{path}/{label}_a.json", "r") as file:
         annotations = json.load(file)
     annotations = {
         uid: set(cells).intersection(current_cells)
         for uid, cells in annotations.items()
     }
     return {"annotations": annotations, "ontology": ontology}
+
+
+def _load_cellmarker2_cell_types(path: str) -> dict[str, Any]:
+    """Load the cell types knowledge base with CellMarker 2.0 annotations.
+
+    ``path`` is the path to the JSON and OBO files containing the cell types knowledge base.
+
+    Returns
+    A dict with two keys:
+        `annotations`: a dict associating a Uniprot ID to its associated cell types
+        `ontology`: a graph associating a cell type to its parents in the hierarchy and its human-readable label.
+    """
+    return _load_cell_types(path, "CTYP")
+
+
+def _load_celltaxonomy_cell_types(path: str) -> dict[str, Any]:
+    """Load the cell types knowledge base with CellMarker 2.0 annotations.
+
+    ``path`` is the path to the JSON and OBO files containing the cell types knowledge base.
+
+    Returns
+    A dict with two keys:
+        `annotations`: a dict associating a Uniprot ID to its associated cell types
+        `ontology`: a graph associating a cell type to its parents in the hierarchy and its human-readable label.
+    """
+    return _load_cell_types(path, "CTYP2")
 
 
 def _get_roots_diseases() -> set[str]:

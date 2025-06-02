@@ -18,10 +18,11 @@ def _get_gene_symbol(gene: str) -> str:
     Returns
         A gene symbol.
     """
-    try:
-        return label(gene)
-    except TypeError:   # prevents errors from wrongfully querying mir-base.
+    if gene.startswith(
+        "MI"
+    ):  # prevents errors raised from pypath querying mir-base wrongfully.
         return gene
+    return label(gene)
 
 
 def _get_timestamp() -> str:

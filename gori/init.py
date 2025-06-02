@@ -10,7 +10,7 @@ from gori.src.utils import _get_timestamp
 
 
 def download_priors(
-    priors: set[str] = {"CTYP", "GENG", "PATH"},
+    priors: set[str] = {"CTYP", "CTYP2", "GENG", "PATH"},
     path: str = "./.priors",
     params: dict[str, Any] = get_parameters(),
 ) -> None:
@@ -41,7 +41,7 @@ def download_priors(
 
 
 def setup_priors(
-    priors: set[str] = {"CTYP", "GENG", "PATH"},
+    priors: set[str] = {"CTYP", "CTYP2", "GENG", "PATH"},
     dl_path: str = "./.priors",
     su_path: str = "./priors",
     remove_dl: bool = True,

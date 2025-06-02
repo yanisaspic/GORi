@@ -265,14 +265,14 @@ def _get_notebook_template() -> str:
  "nbformat_minor": 5
 }"""
     template = template.replace('\n"', '\\n"')
-    template = template.replace("\\\'", "\\\\'")
-    template = template.replace('\"\"', '\\"\\"')
+    template = template.replace("\\'", "\\\\'")
+    template = template.replace('""', '\\"\\"')
     return template
 
 
 def _get_config() -> Config:
     """Get an HTMLExporter for a Jupyter Notebook.
-    
+
     Returns
         A Config object."""
     c = Config()
@@ -289,13 +289,15 @@ def _write_notebook(params: dict[str, Any]) -> None:
     """
     template = _get_notebook_template()
     template = template.replace("PLACEHOLDER_SHEETS_PATH", params["sheets_path"])
-    template = template.replace("PLACEHOLDER_USE_GENE_SYMBOL", str(params["use_gene_symbol"]))
-    
+    template = template.replace(
+        "PLACEHOLDER_USE_GENE_SYMBOL", str(params["use_gene_symbol"])
+    )
+
     hashcode = str(hash(params["sheets_path"] + params["report_path"]))
     ipynb_path = f"./.{hashcode}.ipynb"
     with open(ipynb_path, "w", encoding="utf-8") as f:
         f.write(template)
-    
+
     with open(ipynb_path) as f:
         nb_in = nbformat.read(f, nbformat.NO_CONVERT)
     ep = ExecutePreprocessor(timeout=600, kernel_name="python3")

@@ -10,7 +10,7 @@ from typing import Any
 from gori.src.utils import _get_uniprot_id
 
 
-def _setup_cell_types(dl_path: str, su_path: str) -> None:
+def _setup_cellmarker2_cell_types(dl_path: str, su_path: str) -> None:
     """Set-up the CellTaxonomy and Cell Ontology (CL) cell type annotations.
 
     ``dl_path`` is a path where downloaded files are stored.
@@ -22,6 +22,28 @@ def _setup_cell_types(dl_path: str, su_path: str) -> None:
     annotations = annotations.groupby("UNIPROTID")["cellontology_id"].apply(list)
     annotations = annotations.to_dict()
     with open(f"{su_path}/CTYP_a.json", "w") as file:
+        json.dump(annotations, file)
+    os.rename(f"{_dl_path}/cell_types_ontology.obo", f"{su_path}/CTYP_o.obo")
+
+
+def _setup_celltaxonomy_cell_types(dl_path: str, su_path: str) -> None:
+    """Set-up the CellTaxonomy and Cell Ontology (CL) cell type annotations.
+
+    ``dl_path`` is a path where downloaded files are stored.
+    ``su_path`` is a path to store the set-up files.
+
+    """
+    _dl_path = f"{dl_path}/cell_types"
+    annotations = pd.read_csv(f"{_dl_path}/CellTaxonomy_annotations.csv")
+    # split rows with multiple uniprot ids into multiple rows with a single id:
+    annotations = annotations.assign(
+        Uniprot=annotations.Uniprot.str.split(",")
+    ).explode("Uniprot")
+    annotations = annotations.groupby("Uniprot")["Specific_Cell_Ontology_ID"].apply(
+        list
+    )
+    annotations = annotations.to_dict()
+    with open(f"{su_path}/CTYP2_a.json", "w") as file:
         json.dump(annotations, file)
     os.rename(f"{_dl_path}/cell_types_ontology.obo", f"{su_path}/CTYP_o.obo")
 
