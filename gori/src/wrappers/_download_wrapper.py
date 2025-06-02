@@ -47,7 +47,7 @@ def _download_celltaxonomy_cell_types(path: str, params: dict[str, Any]) -> None
     if not os.path.isdir(_path):
         os.mkdir(_path)
 
-    resources = params["resources_wrapper"]["CTYP2"]
+    resources = params["wrappers"]["resources_wrapper"]["CTYP2"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
             urlretrieve(url, f"{_path}/{file}")
