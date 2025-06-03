@@ -23,7 +23,8 @@ def _setup_cellmarker2_cell_types(dl_path: str, su_path: str) -> None:
     annotations = annotations.to_dict()
     with open(f"{su_path}/CTYP_a.json", "w") as file:
         json.dump(annotations, file)
-    os.rename(f"{_dl_path}/cell_types_ontology.obo", f"{su_path}/CTYP_o.obo")
+    if os.path.exists(f"{_dl_path}/cell_types_ontology.obo"):
+        os.rename(f"{_dl_path}/cell_types_ontology.obo", f"{su_path}/CTYP_o.obo")
 
 
 def _setup_celltaxonomy_cell_types(dl_path: str, su_path: str) -> None:
@@ -45,7 +46,8 @@ def _setup_celltaxonomy_cell_types(dl_path: str, su_path: str) -> None:
     annotations = annotations.to_dict()
     with open(f"{su_path}/CTYP2_a.json", "w") as file:
         json.dump(annotations, file)
-    os.rename(f"{_dl_path}/cell_types_ontology.obo", f"{su_path}/CTYP_o.obo")
+    if os.path.exists(f"{_dl_path}/cell_types_ontology.obo"):
+        os.rename(f"{_dl_path}/cell_types_ontology.obo", f"{su_path}/CTYP_o.obo")
 
 
 def _get_mesh_template(aspect: str) -> dict[str, str]:

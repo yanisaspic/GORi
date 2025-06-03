@@ -59,6 +59,7 @@ def _get_stopwords() -> set[str]:
         "but",
         "by",
         "can",
+        "co",
         "couldn",
         "couldn't",
         "d",
@@ -128,6 +129,7 @@ def _get_stopwords() -> set[str]:
         "needn",
         "needn't",
         "no",
+        "non",
         "nor",
         "not",
         "now",
@@ -145,7 +147,9 @@ def _get_stopwords() -> set[str]:
         "out",
         "over",
         "own",
+        "pd",
         "pre",
+        "pro",
         "post",
         "re",
         "s",
@@ -248,7 +252,7 @@ def get_parameters() -> dict[str, Any]:
 
     The parameters are stored in a dict:
         `n_genes_threshold` and `pvalues_threshold` are numerics used to filter out weak associations.
-        `heuristic` is a boolean indicating if the heuristic approach should be used by GORi.
+        `use_heuristic` is a boolean indicating if the heuristic approach should be used by GORi.
         `use_gene_symbol` is a boolean indicating if the gene symbols should be used.
         `sheets_path` is a path where the results of the analysis will be stored.
         "report_path" is a path where the HTML report will be stored.

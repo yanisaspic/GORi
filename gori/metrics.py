@@ -129,7 +129,7 @@ def _get_prior_eics(
     prior: str,
     corpus: dict[str, dict[str, set[str]]],
     data: dict[str, Any],
-    params: dict[str, Any],
+    params: dict[str, Any] = get_parameters(),
 ) -> pd.DataFrame:
     """Get the Extrinsic Information Content (EIC) of every term from a prior.
 
