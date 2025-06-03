@@ -78,7 +78,7 @@ def gori(
 def gorilon(
     path: str,
     direction: str = "any",
-    priors: set[str] = {"BIOP", "CELC", "CTYP", "CTYP2", "GENG", "MOLF", "PATH"},
+    priors: set[str] = {"BIOP", "CELC", "CTYP", "MOLF", "PATH"},
     priors_path: str = "./priors",
     params: dict[str, Any] = get_parameters(),
     save: bool = True,

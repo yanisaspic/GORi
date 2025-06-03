@@ -4,11 +4,25 @@
 
 import os
 import gzip
+import requests
 import pandas as pd
 from typing import Any
 from shutil import copyfileobj
-from urllib.request import urlretrieve
 from gori.src.utils import _get_timestamp
+
+
+def _download_file(url: str, path: str) -> None:
+    """Download a file. This function is adapted for large files (>100MB), unlike urlretrieve.
+
+    ``url`` is a url leading to a file to download.
+    ``path`` is a path to store the downloaded file.
+    """
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()    # ensures we notice bad responses
+        with open(path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:       # filters out keep-alive new chunks
+                    f.write(chunk)
 
 
 def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
@@ -24,7 +38,7 @@ def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
     resources = params["wrappers"]["resources_wrapper"]["CTYP"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
-            urlretrieve(url, f"{_path}/{file}")
+            _download_file(url, f"{_path}/{file}")
             log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
 
     annotations = pd.read_excel(f"{_path}/raw_CellMarker2_annotations.xlsx")
@@ -50,7 +64,7 @@ def _download_celltaxonomy_cell_types(path: str, params: dict[str, Any]) -> None
     resources = params["wrappers"]["resources_wrapper"]["CTYP2"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
-            urlretrieve(url, f"{_path}/{file}")
+            _download_file(url, f"{_path}/{file}")
             log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
 
     annotations = pd.read_csv(f"{_path}/raw_CellTaxonomy_annotations.txt", sep="\t")
@@ -75,7 +89,7 @@ def _download_diseases(path: str, params: dict[str, Any]) -> None:
     resources = params["wrappers"]["resources_wrapper"]["DISE"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
-            urlretrieve(url, f"{_path}/{file}")
+            _download_file(url, f"{_path}/{file}")
             log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
 
     with gzip.open(f"{_path}/raw_CTD_annotations.csv.gz", "rb") as f_in:
@@ -105,7 +119,7 @@ def _download_gene_groups(path: str, params: dict[str, Any]) -> None:
     resources = params["wrappers"]["resources_wrapper"]["GENG"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
-            urlretrieve(url, f"{_path}/{file}")
+            _download_file(url, f"{_path}/{file}")
             log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
 
 
@@ -123,5 +137,5 @@ def _download_pathways(path: str, params: dict[str, Any]) -> None:
     resources = params["wrappers"]["resources_wrapper"]["PATH"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
-            urlretrieve(url, f"{_path}/{file}")
+            _download_file(url, f"{_path}/{file}")
             log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
