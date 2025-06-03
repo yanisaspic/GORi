@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 NAME = "gori"
-VERSION = "0.1"
+VERSION = "1.0"
 DESCRIPTION = "Context-informed genesets annotations."
 LONG_DESCRIPTION = "An algorithm to annotate related genesets, with any knowledge base."
 AUTHOR = "Yanis Asloudj"

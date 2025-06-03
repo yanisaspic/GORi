@@ -63,7 +63,7 @@ def _get_words_scores(
     for group, terms in pairs.items():
         words = {t: _get_words0(t, params) for t in terms}
         wm = _get_transaction_matrix({"tmp": words})
-        wm = wm.replace({True: 1, False: np.nan}).infer_objects(copy=False)
+        wm = wm.astype(bool).replace({True: 1, False: np.nan})
         wm = wm.add(wm.index.map(weights[group]), axis=0)  # add to increment the scores
         wm = wm.mean(axis=0)
         wm.name = group

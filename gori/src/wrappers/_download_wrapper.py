@@ -18,10 +18,10 @@ def _download_file(url: str, path: str) -> None:
     ``path`` is a path to store the downloaded file.
     """
     with requests.get(url, stream=True) as r:
-        r.raise_for_status()    # ensures we notice bad responses
-        with open(path, 'wb') as f:
+        r.raise_for_status()  # ensures we notice bad responses
+        with open(path, "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
-                if chunk:       # filters out keep-alive new chunks
+                if chunk:  # filters out keep-alive new chunks
                     f.write(chunk)
 
 

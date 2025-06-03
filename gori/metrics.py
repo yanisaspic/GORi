@@ -102,7 +102,9 @@ def get_iics(
 
 
 def _setup_eics(
-    associations: pd.DataFrame, data: dict[str, Any], params: dict[str, Any]
+    associations: pd.DataFrame,
+    data: dict[str, Any],
+    params: dict[str, Any] = get_parameters(),
 ) -> dict[str, dict[str, set[str]]]:
     """Setup the results of a GORI enrichment analysis to compute the Extrinsic Information Content (EIC) of terms.
 
@@ -129,7 +131,7 @@ def _get_prior_eics(
     prior: str,
     corpus: dict[str, dict[str, set[str]]],
     data: dict[str, Any],
-    params: dict[str, Any] = get_parameters(),
+    params: dict[str, Any],
 ) -> pd.DataFrame:
     """Get the Extrinsic Information Content (EIC) of every term from a prior.
 
