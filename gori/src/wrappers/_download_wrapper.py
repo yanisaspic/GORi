@@ -76,7 +76,7 @@ def _download_celltaxonomy_cell_types(path: str, params: dict[str, Any]) -> None
 
 
 def _download_diseases(path: str, params: dict[str, Any]) -> None:
-    """Download knowledge bases associated to diseases (DISE).
+    """Download knowledge bases associated to diseases (MeSH).
 
     ``path`` is a path to store the downloaded files.
     ``params`` is a dict of parameters.
@@ -86,7 +86,7 @@ def _download_diseases(path: str, params: dict[str, Any]) -> None:
     if not os.path.isdir(_path):
         os.mkdir(_path)
 
-    resources = params["wrappers"]["resources_wrapper"]["DISE"]
+    resources = params["wrappers"]["resources_wrapper"]["MeSH"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
             _download_file(url, f"{_path}/{file}")
@@ -106,7 +106,7 @@ def _download_diseases(path: str, params: dict[str, Any]) -> None:
 
 
 def _download_gene_groups(path: str, params: dict[str, Any]) -> None:
-    """Download knowledge bases associated to gene groups (GENG).
+    """Download knowledge bases associated to gene groups (HGNC).
 
     ``path`` is a path to store the downloaded files.
     ``params`` is a dict of parameters.
@@ -116,7 +116,7 @@ def _download_gene_groups(path: str, params: dict[str, Any]) -> None:
     if not os.path.isdir(_path):
         os.mkdir(_path)
 
-    resources = params["wrappers"]["resources_wrapper"]["GENG"]
+    resources = params["wrappers"]["resources_wrapper"]["HGNC"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
             _download_file(url, f"{_path}/{file}")

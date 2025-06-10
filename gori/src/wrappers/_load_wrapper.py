@@ -21,7 +21,7 @@ def _load_cell_types(path: str, label: str) -> dict[str, Any]:
             `annotations`: a dict associating a Uniprot ID to its associated cell types
             `ontology`: a graph associating a cell type to its parents in the hierarchy and its human-readable label.
     """
-    ontology = from_file(f"{path}/CTYP_o.obo").graph
+    ontology = from_file(f"{path}/CellMarker2_o.obo").graph
     current_cells = set(ontology.nodes)
 
     with open(f"{path}/{label}_a.json", "r") as file:
