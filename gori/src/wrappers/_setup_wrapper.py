@@ -170,7 +170,7 @@ def _setup_diseases(dl_path: str, su_path: str) -> None:
     uniprot_annotations = {
         _get_uniprot_id(gs): mesh_ids for gs, mesh_ids in annotations.items()
     }
-    with open(f"{su_path}/DISE_a.json", "w") as file:
+    with open(f"{su_path}/MeSH_a.json", "w") as file:
         json.dump(uniprot_annotations, file)
 
     mesh_d = _parse_mesh_file(f"{_dl_path}/MeSH_hierarchy_D.bin", "D")
@@ -179,10 +179,10 @@ def _setup_diseases(dl_path: str, su_path: str) -> None:
         "translations": mesh_d["translations"] | mesh_c["translations"],
         "hierarchy": mesh_d["hierarchy"] | mesh_c["hierarchy"],
     }
-    with open(f"{su_path}/DISE_t.json", "w") as file:
+    with open(f"{su_path}/MeSH_t.json", "w") as file:
         json.dump(mesh["translations"], file)
     hierarchy = {meshid: list(parents) for meshid, parents in mesh["hierarchy"].items()}
-    with open(f"{su_path}/DISE_h.json", "w") as file:
+    with open(f"{su_path}/MeSH_h.json", "w") as file:
         json.dump(hierarchy, file)
 
 
@@ -197,14 +197,14 @@ def _setup_gene_groups(dl_path: str, su_path: str) -> None:
     labels = pd.read_csv(f"{_dl_path}/HGNC_labels.csv", index_col=0)
     labels.name = labels.name.apply(lambda n: n.strip())
     translations = labels.name.to_dict()
-    with open(f"{su_path}/GENG_t.json", "w") as file:
+    with open(f"{su_path}/HGNC_t.json", "w") as file:
         json.dump(translations, file)
 
     get_family_name = lambda id: translations[id]
     hierarchy = hierarchy.applymap(get_family_name)
     hierarchy = hierarchy.groupby("child_fam_id")["parent_fam_id"].apply(list)
     hierarchy = hierarchy.to_dict()
-    with open(f"{su_path}/GENG_h.json", "w") as file:
+    with open(f"{su_path}/HGNC_h.json", "w") as file:
         json.dump(hierarchy, file)
 
 
@@ -235,13 +235,13 @@ def _setup_pathways(dl_path: str, su_path: str) -> None:
 
     labels = labels.loc[labels.species == "Homo sapiens"]
     translations = labels.name.to_dict()
-    with open(f"{su_path}/PATH_t.json", "w") as file:
+    with open(f"{su_path}/Reactome_t.json", "w") as file:
         json.dump(translations, file)
 
     _annotations = annotations.loc[annotations.species == "Homo sapiens"]
     annotations = _annotations.groupby("uniprot_id")["reactome_id"].apply(list)
     annotations = annotations.to_dict()
-    with open(f"{su_path}/PATH_a.json", "w") as file:
+    with open(f"{su_path}/Reactome_a.json", "w") as file:
         json.dump(annotations, file)
 
     hierarchy = hierarchy.loc[
@@ -249,5 +249,5 @@ def _setup_pathways(dl_path: str, su_path: str) -> None:
     ]
     hierarchy = hierarchy.groupby("child_reactome_id")["parent_reactome_id"].apply(list)
     hierarchy = hierarchy.to_dict()
-    with open(f"{su_path}/PATH_h.json", "w") as file:
+    with open(f"{su_path}/Reactome_h.json", "w") as file:
         json.dump(hierarchy, file)

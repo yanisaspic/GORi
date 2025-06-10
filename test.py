@@ -7,7 +7,7 @@ from urllib.request import urlretrieve
 
 from gori.loaders import load_feve
 
-feve_resource = load_feve(path="./data/Darmanis_HumGBM.xlsx)
+feve_resource = load_feve(path="./data/Darmanis_HumGBM.xlsx")
 
 from gori.init import download_resources, setup_resources
 from gori.loaders import load_resources
