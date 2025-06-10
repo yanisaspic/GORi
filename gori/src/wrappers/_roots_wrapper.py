@@ -1,11 +1,11 @@
 """Functions used by roots_wrapper().
-    Roots are manually defined for GO and CTYP due to their specific data structures.
+    Roots are manually defined for GO and CellMarker2 due to their specific data structures.
 
     2025/05/26 @yanisaspic"""
 
 
 def _get_biop_roots() -> set[str]:
-    """Get the roots of the BIOP prior.
+    """Get the roots of the GO_BP resource.
 
     Returns
         A set of GO ids.
@@ -14,7 +14,7 @@ def _get_biop_roots() -> set[str]:
 
 
 def _get_celc_roots() -> set[str]:
-    """Get the roots of the CELC prior.
+    """Get the roots of the GO_CC resource.
 
     Returns
         A set of GO ids.
@@ -23,7 +23,7 @@ def _get_celc_roots() -> set[str]:
 
 
 def _get_ctyp_roots() -> set[str]:
-    """Get the roots of the CTYP prior.
+    """Get the roots of the CellMarker2 resource.
 
     Returns
         A set of CL ids.
@@ -32,7 +32,7 @@ def _get_ctyp_roots() -> set[str]:
 
 
 def _get_molf_roots() -> set[str]:
-    """Get the roots of the MOLC prior.
+    """Get the roots of the MOLC resource.
 
     Returns
         A set of GO ids.

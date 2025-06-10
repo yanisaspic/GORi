@@ -4,18 +4,18 @@ GORi is an algorithm developed to conduct enrichment analyses on a pool of genes
 It also leverages the hierarchical relationships between genesets (*e.g.* genesets of clusters and their sub-clusters)
 to improve its predictions. Finally, it automatically generates an interactive HTML report, to explore the results of the analysis.
 
-Currently, GORi leverages eight semantically distinct concepts, spread across nine distinct *priors* (cf. GORi's tutorial):
+Currently, GORi leverages eight semantically distinct concepts, spread across nine distinct *resources* (cf. GORi's tutorial):
 
-- **biological processes (prior: BIOP)**, from the Gene Ontology (GO).
-- **cellular components (prior: CELC)**, from the Gene Ontology (GO).
+- **biological processes (resource: GO_BP)**, from the Gene Ontology (GO).
+- **cellular components (resource: GO_CC)**, from the Gene Ontology (GO).
 - **cell types, with:**
-    - **prior: CTYP**, from CellMarker 2.0 and the Cell Ontology (CL).
-    - **prior: CTYP2**, from CellTaxonomy and the Cell Ontology (CL).
-- **diseases (prior: DISE)**, from the Comparative Toxicogenomics Database (CTD) and the Medical Subject Headings (MeSH).
-- **gene groups (prior: GENG)**, from the HUGO Gene Nomenclature Committee (HGNC).
-- **molecular functions (prior: MOLF)**, from the Gene Ontology (GO).
-- **pathways (prior: PATH)**, from Reactome.
-- **phenotypes (prior: PHEN)**, from the Human Phenotype Ontology (HPO).
+    - **resource: CellMarker2**, from CellMarker 2.0 and the Cell Ontology (CL).
+    - **resource: CellTaxonomy**, from CellTaxonomy and the Cell Ontology (CL).
+- **diseases (resource: MeSH)**, from the Comparative Toxicogenomics Database (CTD) and the Medical Subject Headings (MeSH).
+- **gene groups (resource: HGNC)**, from the HUGO Gene Nomenclature Committee (HGNC).
+- **molecular functions (resource: GO_MF)**, from the Gene Ontology (GO).
+- **pathways (resource: Reactome)**, from Reactome.
+- **phenotypes (resource: HPO)**, from the Human Phenotype Ontology (HPO).
 
 ## Installation
 

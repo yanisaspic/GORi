@@ -8,8 +8,8 @@ import pandas as pd
 from typing import Any
 from gori.src.utils import (
     _get_transaction_matrix,
-    _get_prior_boundaries,
-    _get_prior_translation,
+    _get_resource_boundaries,
+    _get_resource_translation,
 )
 
 
@@ -37,7 +37,7 @@ def _get_words_scores(
 
     ``associations`` is a pd.DataFrame with nine columns: `antecedents`, `consequents`, `lift`, `pval`, `fdr`,
         `n_genes`, `genes`, `url_a` and `url_c`.
-    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``data`` is a dict associating resources (keys) to their contents (values).
     ``params`` is a dict of parameters.
 
     Returns
@@ -46,9 +46,9 @@ def _get_words_scores(
     # filter out root words
     root_words = set()  # type: set[str]
     for p in data.keys():
-        tmp = _get_prior_boundaries(p, data, params)["roots"]
+        tmp = _get_resource_boundaries(p, data, params)["roots"]
         roots = {
-            _get_prior_translation(r, p, data, params, has_prefix=False) for r in tmp
+            _get_resource_translation(r, p, data, params, has_prefix=False) for r in tmp
         }
         for r in roots:
             root_words = root_words | _get_words0(r, params)

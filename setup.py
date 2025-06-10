@@ -29,6 +29,7 @@ REQUIREMENTS = [
     "pypath_common>=0.2.5",
     "pypath-omnipath>=0.16.17",
     "scipy>=1.9.1",
+    "session_info>=1.0.1",
     "setuptools>=69.2.0",
     "statsmodels>=0.13.2",
 ]

@@ -6,11 +6,11 @@ from typing import Any, Optional
 
 
 def _get_ctyp_url(term: str, header: str, data: Optional[dict[str, Any]]) -> str:
-    """Get the human-readable label of a CTYP annotation.
+    """Get the human-readable label of a CellMarker2 annotation.
 
     ``term`` is an annotation term.
     ``header`` is a url header.
-    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``data`` is a dict associating resources (keys) to their contents (values).
 
     Returns
         A url.
@@ -20,15 +20,15 @@ def _get_ctyp_url(term: str, header: str, data: Optional[dict[str, Any]]) -> str
 
 
 def _get_geng_url(term: str, header: str, data: dict[str, Any]) -> str:
-    """Get the human-readable label of a GENG annotation.
+    """Get the human-readable label of a HGNC annotation.
 
     ``term`` is an annotation term.
     ``header`` is a url header.
-    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``data`` is a dict associating resources (keys) to their contents (values).
 
     Returns
         A url.
     """
-    translations = {v: k for k, v in data["GENG"]["translations"].items()}
+    translations = {v: k for k, v in data["HGNC"]["translations"].items()}
     term = translations[term]
     return header + term

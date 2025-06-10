@@ -6,35 +6,35 @@ from typing import Any
 from pypath.utils.go import GOAnnotation
 
 
-def _get_ctyp_translation(term: str, prior: dict[str, Any]) -> str:
-    """Get the human-readable label of a CTYP annotation.
+def _get_ctyp_translation(term: str, resource: dict[str, Any]) -> str:
+    """Get the human-readable label of a CellMarker2 annotation.
 
-    ``term`` is a CTYP annotation.
-    ``prior`` is a dict with two keys: "annotations" and "ontology".
+    ``term`` is a CellMarker2 annotation.
+    ``resource`` is a dict with two keys: "annotations" and "ontology".
 
     Returns
         A human-readable label.
     """
-    return prior["ontology"].nodes[term]["name"]
+    return resource["ontology"].nodes[term]["name"]
 
 
-def _get_go_translation(term: str, prior: GOAnnotation) -> str:
+def _get_go_translation(term: str, resource: GOAnnotation) -> str:
     """Get the human-readable label of a GO annotation.
 
     ``term`` is a GO annotation.
-    ``prior`` is a GOAnnotation object.
+    ``resource`` is a GOAnnotation object.
 
     Returns
         A human-readable label.
     """
-    return prior.get_name(term)
+    return resource.get_name(term)
 
 
-def _get_geng_translation(term: str, prior: dict[str, dict[str, Any]]) -> str:
-    """Get the human-readable label of a GENG annotation.
+def _get_geng_translation(term: str, resource: dict[str, dict[str, Any]]) -> str:
+    """Get the human-readable label of a HGNC annotation.
 
-    ``term`` is a GENG annotation.
-    ``prior`` is a dict with three keys: "annotations", "hierarchy" and "translations".
+    ``term`` is a HGNC annotation.
+    ``resource`` is a dict with three keys: "annotations", "hierarchy" and "translations".
 
     Returns
         A human-readable label.

@@ -72,81 +72,81 @@ from gori.src.wrappers._urls_wrapper import (
 def ancestors_wrapper() -> dict[str, Callable]:
     """A wrapper to get the ancestors of an annotation term.
 
-    It returns a prior-specific function, which expects two parameters:
+    It returns a resource-specific function, which expects two parameters:
         ``terms`` is a set of annotation terms. (set[str])
-        ``prior`` is the contents of a knowledge base.
+        ``resource`` is the contents of a knowledge base.
 
     Returns
-        A dict associating priors (keys) to their ancestors function.
+        A dict associating resources (keys) to their ancestors function.
     """
     return {
-        "BIOP": _get_go_ancestors,
-        "CELC": _get_go_ancestors,
-        "CTYP": _get_ctyp_ancestors,
-        "CTYP2": _get_ctyp_ancestors,
-        "MOLF": _get_go_ancestors,
+        "GO_BP": _get_go_ancestors,
+        "GO_CC": _get_go_ancestors,
+        "CellMarker2": _get_ctyp_ancestors,
+        "CellTaxonomy": _get_ctyp_ancestors,
+        "GO_MF": _get_go_ancestors,
     }
 
 
 def annotations_wrapper() -> dict[str, Callable]:
     """A wrapper to get the annotations of a gene.
 
-    It returns a prior-specific function, which expects four parameters:
+    It returns a resource-specific function, which expects four parameters:
         ``uid`` is a UniProtID. (str)
-        ``prior`` is a prior label. (str)
-        ``data`` is a dict associating priors (keys) to their contents (values). (dict[str, Any])
+        ``resource`` is a resource label. (str)
+        ``data`` is a dict associating resources (keys) to their contents (values). (dict[str, Any])
         ``params`` is a dict of parameters. (dict[str, Any])
 
     Returns
-        A dict associating priors (keys) to their annotations function.
+        A dict associating resources (keys) to their annotations function.
     """
     return {
-        "BIOP": _get_biop_annotations,
-        "CELC": _get_celc_annotations,
-        "CTYP": _get_ctyp_annotations,
-        "CTYP2": _get_ctyp_annotations,
-        "DISE": _get_dise_annotations,
-        "GENG": _get_geng_annotations,
-        "MOLF": _get_molf_annotations,
-        "PHEN": _get_phen_annotations,
+        "GO_BP": _get_biop_annotations,
+        "GO_CC": _get_celc_annotations,
+        "CellMarker2": _get_ctyp_annotations,
+        "CellTaxonomy": _get_ctyp_annotations,
+        "MeSH": _get_dise_annotations,
+        "HGNC": _get_geng_annotations,
+        "GO_MF": _get_molf_annotations,
+        "HPO": _get_phen_annotations,
     }
 
 
 def descendants_wrapper() -> dict[str, Callable]:
     """A wrapper to get the descendants of an annotation term.
 
-    It returns a prior-specific function, which expects two parameters:
+    It returns a resource-specific function, which expects two parameters:
         ``terms`` is a set of annotation terms. (set[str])
-        ``prior`` is the contents of a knowledge base.
+        ``resource`` is the contents of a knowledge base.
 
     Returns
-        A dict associating priors (keys) to their descendants function.
+        A dict associating resources (keys) to their descendants function.
     """
     return {
-        "BIOP": _get_go_descendants,
-        "CELC": _get_go_descendants,
-        "CTYP": _get_ctyp_descendants,
-        "CTYP2": _get_ctyp_descendants,
-        "MOLF": _get_go_descendants,
+        "GO_BP": _get_go_descendants,
+        "GO_CC": _get_go_descendants,
+        "CellMarker2": _get_ctyp_descendants,
+        "CellTaxonomy": _get_ctyp_descendants,
+        "GO_MF": _get_go_descendants,
     }
 
 
 def download_wrapper() -> dict[str, Callable]:
-    """A wrapper to download curated knowledge bases (i.e. priors).
+    """A wrapper to download curated knowledge bases (i.e. resources).
 
-    It returns a prior-specific function, which expects two parameters:
+    It returns a resource-specific function, which expects two parameters:
         ``path`` is a path to store the downloaded files. (str)
         ``params`` is a dict of parameters. (dict[str, Any])
 
     Returns
-        A dict associating priors (keys) to a download function (values).
+        A dict associating resources (keys) to a download function (values).
     """
     return {
-        "CTYP": _download_cellmarker2_cell_types,
-        "CTYP2": _download_celltaxonomy_cell_types,
-        "DISE": _download_diseases,
-        "GENG": _download_gene_groups,
-        "PATH": _download_pathways,
+        "CellMarker2": _download_cellmarker2_cell_types,
+        "CellTaxonomy": _download_celltaxonomy_cell_types,
+        "MeSH": _download_diseases,
+        "HGNC": _download_gene_groups,
+        "Reactome": _download_pathways,
     }
 
 
@@ -154,19 +154,19 @@ def headers_wrapper() -> dict[str, str]:
     """A wrapper with url headers to knowledge bases.
 
     Returns
-        A dict associating priors (keys) to their url headers (values).
+        A dict associating resources (keys) to their url headers (values).
     """
     s = "%252F"  # slash character \
     headers = {
-        "BIOP": "www.ebi.ac.uk/QuickGO/term/",
-        "CELC": "www.ebi.ac.uk/QuickGO/term/",
-        "CTYP": f"www.ebi.ac.uk/ols4/ontologies/cl/classes/http:{s}{s}purl.obolibrary.org{s}obo{s}",
-        "CTYP2": f"www.ebi.ac.uk/ols4/ontologies/cl/classes/http:{s}{s}purl.obolibrary.org{s}obo{s}",
-        "DISE": "meshb.nlm.nih.gov/record/ui?ui=",
-        "GENG": "www.genenames.org/data/genegroup/#!/group/",
-        "MOLF": "www.ebi.ac.uk/QuickGO/term/",
-        "PATH": "reactome.org/content/detail/",
-        "PHEN": "hpo.jax.org/browse/term/",
+        "GO_BP": "www.ebi.ac.uk/QuickGO/term/",
+        "GO_CC": "www.ebi.ac.uk/QuickGO/term/",
+        "CellMarker2": f"www.ebi.ac.uk/ols4/ontologies/cl/classes/http:{s}{s}purl.obolibrary.org{s}obo{s}",
+        "CellTaxonomy": f"www.ebi.ac.uk/ols4/ontologies/cl/classes/http:{s}{s}purl.obolibrary.org{s}obo{s}",
+        "MeSH": "meshb.nlm.nih.gov/record/ui?ui=",
+        "HGNC": "www.genenames.org/data/genegroup/#!/group/",
+        "GO_MF": "www.ebi.ac.uk/QuickGO/term/",
+        "Reactome": "reactome.org/content/detail/",
+        "HPO": "hpo.jax.org/browse/term/",
     }
     return headers
 
@@ -174,70 +174,70 @@ def headers_wrapper() -> dict[str, str]:
 def inverse_translate_wrapper() -> dict[str, Callable]:
     """A wrapper to get the term associated to a human-readable label.
 
-    It returns a prior-specific function, which expects two parameters:
+    It returns a resource-specific function, which expects two parameters:
         ``label`` is a a human-readable label. (str)
-        ``data`` is a dict associating priors (keys) to their contents (values). (dict[str, dict[str, Any]])
+        ``data`` is a dict associating resources (keys) to their contents (values). (dict[str, dict[str, Any]])
 
     Returns
-        A dict associating priors (keys) to an inverse_translate function.
+        A dict associating resources (keys) to an inverse_translate function.
     """
-    return {  # Missing priors are translated with a generic function in _get_prior_inverse_translation()
-        "BIOP": _get_go_inverse_translation,
-        "CELC": _get_go_inverse_translation,
-        "CTYP": _get_ctyp_inverse_translation,
-        "CTYP2": _get_ctyp_inverse_translation,
-        "GENG": _get_geng_inverse_translation,
-        "MOLF": _get_go_inverse_translation,
+    return {  # Missing resources are translated with a generic function in _get_resource_inverse_translation()
+        "GO_BP": _get_go_inverse_translation,
+        "GO_CC": _get_go_inverse_translation,
+        "CellMarker2": _get_ctyp_inverse_translation,
+        "CellTaxonomy": _get_ctyp_inverse_translation,
+        "HGNC": _get_geng_inverse_translation,
+        "GO_MF": _get_go_inverse_translation,
     }
 
 
 def load_wrapper() -> dict[str, Callable]:
-    """A wrapper to load curated knowledge bases (i.e. priors).
+    """A wrapper to load curated knowledge bases (i.e. resources).
 
-    It returns a prior-specific function, which expects one parameter:
+    It returns a resource-specific function, which expects one parameter:
         ``path`` is the path to the JSON files containing the knowledge base, or a placeholder. (str)
 
     Returns
-        A dict associating priors (keys) to a load function (values).
+        A dict associating resources (keys) to a load function (values).
     """
-    return {  # GO priors are included to generate a valid error message.
-        "BIOP": _load_gene_ontology,
-        "CELC": _load_gene_ontology,
-        "CTYP": _load_cellmarker2_cell_types,
-        "CTYP2": _load_celltaxonomy_cell_types,
-        "DISE": _load_diseases,
-        "GENG": _load_gene_groups,
-        "MOLF": _load_gene_ontology,
-        "PATH": _load_pathways,
-        "PHEN": _load_phenotypes,
+    return {  # GO resources are included to generate a valid error message.
+        "GO_BP": _load_gene_ontology,
+        "GO_CC": _load_gene_ontology,
+        "CellMarker2": _load_cellmarker2_cell_types,
+        "CellTaxonomy": _load_celltaxonomy_cell_types,
+        "MeSH": _load_diseases,
+        "HGNC": _load_gene_groups,
+        "GO_MF": _load_gene_ontology,
+        "Reactome": _load_pathways,
+        "HPO": _load_phenotypes,
     }
 
 
 def resources_wrapper() -> dict[str, dict[str, str]]:
-    """A wrapper with download links for curated knowledge bases (i.e. priors).
+    """A wrapper with download links for curated knowledge bases (i.e. resources).
 
     Returns
-        A dict associating prior labels (keys) to their download links (values).
+        A dict associating resource labels (keys) to their download links (values).
     """
     wrapper = {
-        "CTYP": {
+        "CellMarker2": {
             "raw_CellMarker2_annotations.xlsx": "http://www.bio-bigdata.center/CellMarker_download_files/file/Cell_marker_Human.xlsx",
             "cell_types_ontology.obo": "https://purl.obolibrary.org/obo/cl/cl-basic.obo",
         },
-        "CTYP2": {
+        "CellTaxonomy": {
             "raw_CellTaxonomy_annotations.txt": "https://download.cncb.ac.cn/celltaxonomy/Cell_Taxonomy_resource.txt",
             "cell_types_ontology.obo": "https://purl.obolibrary.org/obo/cl/cl-basic.obo",
         },
-        "DISE": {
+        "MeSH": {
             "MeSH_hierarchy_C.bin": "https://nlmpubs.nlm.nih.gov/projects/mesh/MESH_FILES/asciimesh/c2025.bin",
             "MeSH_hierarchy_D.bin": "https://nlmpubs.nlm.nih.gov/projects/mesh/MESH_FILES/asciimesh/d2025.bin",
             "raw_CTD_annotations.csv.gz": "https://ctdbase.org/reports/CTD_curated_genes_diseases.csv.gz",
         },
-        "GENG": {
+        "HGNC": {
             "HGNC_labels.csv": "https://storage.googleapis.com/public-download-files/hgnc/csv/csv/genefamily_db_tables/family.csv",
             "HGNC_hierarchy.csv": "https://storage.googleapis.com/public-download-files/hgnc/csv/csv/genefamily_db_tables/hierarchy.csv",
         },
-        "PATH": {
+        "Reactome": {
             "Reactome_annotations.txt": "https://reactome.org/download/current/UniProt2Reactome.txt",
             "Reactome_hierarchy.txt": "https://reactome.org/download/current/ReactomePathwaysRelation.txt",
             "Reactome_labels.txt": "https://reactome.org/download/current/ReactomePathways.txt",
@@ -247,91 +247,91 @@ def resources_wrapper() -> dict[str, dict[str, str]]:
 
 
 def roots_wrapper() -> dict[str, Callable]:
-    """A wrapper to get the roots of a prior.
+    """A wrapper to get the roots of a resource.
 
     Returns
-        A dict associating priors (keys) to their roots (values).
+        A dict associating resources (keys) to their roots (values).
     """
     return {
-        "BIOP": _get_biop_roots,
-        "CELC": _get_celc_roots,
-        "CTYP": _get_ctyp_roots,
-        "CTYP2": _get_ctyp_roots,
-        "MOLF": _get_molf_roots,
+        "GO_BP": _get_biop_roots,
+        "GO_CC": _get_celc_roots,
+        "CellMarker2": _get_ctyp_roots,
+        "CellTaxonomy": _get_ctyp_roots,
+        "GO_MF": _get_molf_roots,
     }
 
 
 def setup_wrapper() -> dict[str, Callable]:
-    """A wrapper to set-up curated knowledge bases (i.e. priors).
+    """A wrapper to set-up curated knowledge bases (i.e. resources).
 
-    It returns a prior-specific function, which expects two parameters:
+    It returns a resource-specific function, which expects two parameters:
         ``dl_path`` is a path where downloaded files are stored. (str)
         ``su_path`` is a path to store the set-up files. (str)
 
     Returns
-        A dict associating priors (keys) to a download function (values).
+        A dict associating resources (keys) to a download function (values).
     """
     return {
-        "CTYP": _setup_cellmarker2_cell_types,
-        "CTYP2": _setup_celltaxonomy_cell_types,
-        "DISE": _setup_diseases,
-        "GENG": _setup_gene_groups,
-        "PATH": _setup_pathways,
+        "CellMarker2": _setup_cellmarker2_cell_types,
+        "CellTaxonomy": _setup_celltaxonomy_cell_types,
+        "MeSH": _setup_diseases,
+        "HGNC": _setup_gene_groups,
+        "Reactome": _setup_pathways,
     }
 
 
 def terms_wrapper() -> dict[str, Callable]:
-    """A wrapper to get every terms in a prior.
+    """A wrapper to get every terms in a resource.
 
-    It returns a prior specific function, which expects one parameter:
-        ``prior`` is a knowledge base. (Any)
+    It returns a resource specific function, which expects one parameter:
+        ``resource`` is a knowledge base. (Any)
 
     Returns
-        A dict associating priors (keys) to their term functions.
+        A dict associating resources (keys) to their term functions.
     """
     return {
-        "BIOP": _get_biop_terms,
-        "CELC": _get_celc_terms,
-        "CTYP": _get_ctyp_terms,
-        "CTYP2": _get_ctyp_terms,
-        "GENG": _get_geng_terms,
-        "MOLF": _get_molf_terms,
+        "GO_BP": _get_biop_terms,
+        "GO_CC": _get_celc_terms,
+        "CellMarker2": _get_ctyp_terms,
+        "CellTaxonomy": _get_ctyp_terms,
+        "HGNC": _get_geng_terms,
+        "GO_MF": _get_molf_terms,
     }
 
 
 def translate_wrapper() -> dict[str, Callable]:
     """A wrapper to get the human-readable label of a term.
 
-    It returns a prior-specific function, which expects two parameters:
+    It returns a resource-specific function, which expects two parameters:
         ``term`` is an annotation term. (str)
-        ``data`` is a dict associating priors (keys) to their contents (values). (dict[str, dict[str, Any]])
+        ``data`` is a dict associating resources (keys) to their contents (values). (dict[str, dict[str, Any]])
 
     Returns
-        A dict associating priors (keys) to a translate function.
+        A dict associating resources (keys) to a translate function.
     """
-    return {  # Missing priors are translated with a generic function in _get_prior_translation()
-        "BIOP": _get_go_translation,
-        "CELC": _get_go_translation,
-        "CTYP": _get_ctyp_translation,
-        "CTYP2": _get_ctyp_translation,
-        "GENG": _get_geng_translation,
-        "MOLF": _get_go_translation,
+    return {  # Missing resources are translated with a generic function in _get_resource_translation()
+        "GO_BP": _get_go_translation,
+        "GO_CC": _get_go_translation,
+        "CellMarker2": _get_ctyp_translation,
+        "CellTaxonomy": _get_ctyp_translation,
+        "HGNC": _get_geng_translation,
+        "GO_MF": _get_go_translation,
     }
 
 
 def urls_wrapper() -> dict[str, Callable]:
     """A wrapper to get the url of an annotation term.
 
-    It returns a prior-specific function, which expects two parameters:
+    It returns a resource-specific function, which expects two parameters:
         ``term`` is an annotation term. (str)
         ``header`` is a url header. (str)
-        ``data`` is a dict associating priors (keys) to their contents (values). (dict[str, Any])
+        ``data`` is a dict associating resources (keys) to their contents (values). (dict[str, Any])
 
     Returns
-        A dict associating priors (keys) to their url functions (values).
+        A dict associating resources (keys) to their url functions (values).
     """
-    return {  # Missing priors' urls are generated with a generic function in _get_prior_url()
-        "CTYP": _get_ctyp_url,
-        "CTYP2": _get_ctyp_url,
-        "GENG": _get_geng_url,
+    return {  # Missing resources' urls are generated with a generic function in _get_resource_url()
+        "CellMarker2": _get_ctyp_url,
+        "CellTaxonomy": _get_ctyp_url,
+        "HGNC": _get_geng_url,
     }

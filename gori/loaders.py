@@ -1,6 +1,6 @@
-"""Functions called to load knowledge bases prior to the GORi analysis.
+"""Functions called to load the knowledge base resources for the GORi analysis.
 
-    2025/05/20 @yanisaspic"""
+    2025/06/10 @yanisaspic"""
 
 import os
 import json
@@ -10,21 +10,23 @@ from gori.params import get_parameters
 from gori.src.utils import _get_uniprot_id
 
 
-def load_priors(
-    priors: set[str], path: str = "./priors", params: dict[str, Any] = get_parameters()
+def load_resources(
+    resources: set[str],
+    path: str = "./resources",
+    params: dict[str, Any] = get_parameters(),
 ) -> dict[str, Any]:
     """Load a subset of knowledge bases readily available in the GORi package.
 
-    ``priors`` is a set of strings containing the names of the knowledge bases to load, including:
-        `BIOP` (biological processes),
-        `CELC` (cellular components),
-        `CTYP` (cell types with CellMarker 2.0 annotations),
-        `CTYP2` (cell types with CellTaxonomy annotations),
-        `DISE` (diseases),
-        `GENG` (gene groups),
-        `MOLF` (molecular functions),
-        `PATH` (pathways) and
-        `PHEN` (phenotypes).
+    ``resources`` is a set of strings containing the names of the knowledge bases to load, including:
+        `GO_BP` (biological processes),
+        `GO_CC` (cellular components),
+        `CellMarker2` (cell types with CellMarker 2.0 annotations),
+        `CellTaxonomy` (cell types with CellTaxonomy annotations),
+        `MeSH` (diseases),
+        `HGNC` (gene groups),
+        `GO_MF` (molecular functions),
+        `Reactome` (pathways) and
+        `HPO` (phenotypes).
     ``path`` is the path to the JSON files containing the knowledge bases.
     ``params`` is a dict of parameters.
 
@@ -32,18 +34,18 @@ def load_priors(
         A dict associating knowledge base names (keys) to their contents (values).
     """
     load_wrapper = params["wrappers"]["load_wrapper"]
-    if any(p in priors for p in ["BIOP", "CELC", "MOLF"]):
-        go = load_wrapper["BIOP"](
+    if any(p in resources for p in ["GO_BP", "GO_CC", "GO_MF"]):
+        go = load_wrapper["GO_BP"](
             path
-        )  # outputs the same GOAnnotation as CELC and MOLF
+        )  # outputs the same GOAnnotation as GO_CC and GO_MF
 
     knowledge_bases = {}
-    for p in priors:
+    for p in resources:
         if p not in load_wrapper.keys():
             raise ValueError(
-                f"Invalid prior: {p}. Valid priors are: {set(load_wrapper)}"
+                f"Invalid resource: {p}. Valid resources are: {set(load_wrapper)}"
             )
-        elif p in ["BIOP", "CELC", "MOLF"]:
+        elif p in ["GO_BP", "GO_CC", "GO_MF"]:
             knowledge_bases[p] = go
         else:
             knowledge_bases[p] = load_wrapper[p](path)
@@ -87,10 +89,10 @@ def load_feve(path: str, direction: str = "any") -> dict[str, dict[str, Any]]:
     }
 
 
-def load_local(prior: str, path: str) -> dict[str, dict[str, Any]]:
+def load_local(resource: str, path: str) -> dict[str, dict[str, Any]]:
     """Load a local knowledge base.
 
-    ``prior`` is the label of the knowledge base to add.
+    ``resource`` is the label of the knowledge base to add.
     ``path`` is the path to the JSON files containing the annotations, the hierarchy
     and the translations of the knowledge base.
 
@@ -100,18 +102,18 @@ def load_local(prior: str, path: str) -> dict[str, dict[str, Any]]:
             ``ontology``: a dict associating a concept to its parent concepts in the hierarchy
             ``translations``: a dict associating a concept to its human-readable label
     """
-    with open(f"{path}/{prior}_a.json", "r") as file:
+    with open(f"{path}/{resource}_a.json", "r") as file:
         annotations = json.load(file)
     annotations = {
         _get_uniprot_id(gene): set(cids) for gene, cids in annotations.items()
     }
 
-    with open(f"{path}/{prior}_h.json", "r") as file:
+    with open(f"{path}/{resource}_h.json", "r") as file:
         hierarchy = json.load(file)
     hierarchy = {cid: set(parents) for cid, parents in hierarchy.items()}
 
-    if os.path.isfile(f"{path}/{prior}_t.json"):
-        with open(f"{path}/{prior}_t.json", "r") as file:
+    if os.path.isfile(f"{path}/{resource}_t.json"):
+        with open(f"{path}/{resource}_t.json", "r") as file:
             translations = json.load(file)
     else:
         concepts = {p for parents in hierarchy.values() for p in parents}

@@ -147,6 +147,7 @@ def _get_stopwords() -> set[str]:
         "out",
         "over",
         "own",
+        "p",
         "pd",
         "pre",
         "pro",
@@ -225,10 +226,10 @@ def _get_stopwords() -> set[str]:
 
 
 def _get_wrappers() -> dict[str, dict[str, Any]]:
-    """Get the wrapper functions used by GORi to handle specific priors.
+    """Get the wrapper functions used by GORi to handle specific resources.
 
     Returns
-        A dict associating wrapper labels (keys) to their prior-specific functions (values).
+        A dict associating wrapper labels (keys) to their resource-specific functions (values).
     """
     return {
         "ancestors_wrapper": ancestors_wrapper(),
@@ -256,7 +257,7 @@ def get_parameters() -> dict[str, Any]:
         `use_gene_symbol` is a boolean indicating if the gene symbols should be used.
         `sheets_path` is a path where the results of the analysis will be stored.
         "report_path" is a path where the HTML report will be stored.
-        `wrappers` is a dict of prior-specifc functions.
+        `wrappers` is a dict of resource-specifc functions.
         `stopwords` is a set of words that should not be used in GORi.
 
     Returns

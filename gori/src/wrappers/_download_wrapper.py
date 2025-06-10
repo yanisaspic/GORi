@@ -26,7 +26,7 @@ def _download_file(url: str, path: str) -> None:
 
 
 def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
-    """Download knowledge bases associated to cell types and CellMarker 2.0 (CTYP).
+    """Download knowledge bases associated to cell types and CellMarker 2.0.
 
     ``path`` is a path to store the downloaded files.
     ``params`` is a dict of parameters.
@@ -35,7 +35,7 @@ def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
     if not os.path.isdir(_path):
         os.mkdir(_path)
 
-    resources = params["wrappers"]["resources_wrapper"]["CTYP"]
+    resources = params["wrappers"]["resources_wrapper"]["CellMarker2"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
             _download_file(url, f"{_path}/{file}")
@@ -52,7 +52,7 @@ def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
 
 
 def _download_celltaxonomy_cell_types(path: str, params: dict[str, Any]) -> None:
-    """Download knowledge bases associated to cell types and CellTaxonomy (CTYP2).
+    """Download knowledge bases associated to cell types and CellTaxonomy.
 
     ``path`` is a path to store the downloaded files.
     ``params`` is a dict of parameters.
@@ -61,7 +61,7 @@ def _download_celltaxonomy_cell_types(path: str, params: dict[str, Any]) -> None
     if not os.path.isdir(_path):
         os.mkdir(_path)
 
-    resources = params["wrappers"]["resources_wrapper"]["CTYP2"]
+    resources = params["wrappers"]["resources_wrapper"]["CellTaxonomy"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
             _download_file(url, f"{_path}/{file}")
@@ -124,7 +124,7 @@ def _download_gene_groups(path: str, params: dict[str, Any]) -> None:
 
 
 def _download_pathways(path: str, params: dict[str, Any]) -> None:
-    """Download knowledge bases associated to pathways (PATH).
+    """Download knowledge bases associated to pathways (Reactome).
 
     ``path`` is a path to store the downloaded files.
     ``params`` is a dict of parameters.
@@ -134,7 +134,7 @@ def _download_pathways(path: str, params: dict[str, Any]) -> None:
     if not os.path.isdir(_path):
         os.mkdir(_path)
 
-    resources = params["wrappers"]["resources_wrapper"]["PATH"]
+    resources = params["wrappers"]["resources_wrapper"]["Reactome"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
             _download_file(url, f"{_path}/{file}")

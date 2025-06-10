@@ -8,20 +8,20 @@ from math import log2
 from typing import Any
 from gori.params import get_parameters
 from gori.src.utils import (
-    _get_prior_ancestors,
-    _get_prior_boundaries,
-    _get_prior_descendants,
-    _get_prior_inverse_translation,
-    _get_prior_terms,
+    _get_resource_ancestors,
+    _get_resource_boundaries,
+    _get_resource_descendants,
+    _get_resource_inverse_translation,
+    _get_resource_terms,
     _get_transaction_matrix,
-    _get_prior_translation,
+    _get_resource_translation,
 )
 
 
-def _get_prior_iic0(
+def _get_resource_iic0(
     term: str,
     boundaries: dict[str, set[str]],
-    prior: str,
+    resource: str,
     data: dict[str, Any],
     params: dict[str, Any],
 ) -> float:
@@ -40,15 +40,15 @@ def _get_prior_iic0(
 
     ``term`` is an annotation term.
     ``boundaries`` is a dict with two keys: `roots` and `leaves`.
-    ``prior`` is a prior label.
-    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``resource`` is a resource label.
+    ``data`` is a dict associating resources (keys) to their contents (values).
     ``params`` is a dict of parameters.
 
     Returns
         A float ranging from 0 to 1.
     """
-    subsumers_t = _get_prior_ancestors({term}, prior, data, params) | {term}
-    leaves_t = _get_prior_descendants({term}, prior, data, params).intersection(
+    subsumers_t = _get_resource_ancestors({term}, resource, data, params) | {term}
+    leaves_t = _get_resource_descendants({term}, resource, data, params).intersection(
         boundaries["leaves"]
     )
     tmp = ((len(leaves_t) / len(subsumers_t)) + 1) / (len(boundaries["leaves"]) + 1)
@@ -56,22 +56,22 @@ def _get_prior_iic0(
     return iic
 
 
-def _get_prior_iics(
-    prior: str, data: dict[str, Any], params: dict[str, Any]
+def _get_resource_iics(
+    resource: str, data: dict[str, Any], params: dict[str, Any]
 ) -> pd.DataFrame:
     """Get the Intrinsic Information Content (IIC) of every term in a knowledge base,
-    cf. _get_prior_iic0().
+    cf. _get_resource_iic0().
 
-    ``prior`` is a prior label.
-    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``resource`` is a resource label.
+    ``data`` is a dict associating resources (keys) to their contents (values).
     ``params`` is a dict of parameters.
 
     Returns
         A pd.Series associating terms to their iics.
     """
-    terms = _get_prior_terms(prior, data, params)
-    boundaries = _get_prior_boundaries(prior, data, params)
-    tmp = {t: _get_prior_iic0(t, boundaries, prior, data, params) for t in terms}
+    terms = _get_resource_terms(resource, data, params)
+    boundaries = _get_resource_boundaries(resource, data, params)
+    tmp = {t: _get_resource_iic0(t, boundaries, resource, data, params) for t in terms}
     out = pd.DataFrame.from_dict(tmp, orient="index", columns=["iic"])
     return out
 
@@ -79,24 +79,24 @@ def _get_prior_iics(
 def get_iics(
     data: dict[str, Any], params: dict[str, Any] = get_parameters()
 ) -> pd.DataFrame:
-    """Get a table associating each annotation term to its raw and normalized IICs, its prior and
+    """Get a table associating each annotation term to its raw and normalized IICs, its resource and
     its human-readable label.
 
-    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``data`` is a dict associating resources (keys) to their contents (values).
     ``params`` is a dict of parameters.
 
     Returns
-        A pd.DataFrame where rows are terms, with four columns: `iic`, `label`, `n_iic` and `prior`.
+        A pd.DataFrame where rows are terms, with four columns: `iic`, `label`, `n_iic` and `resource`.
     """
     tmp = []
     for p in data.keys():
-        p_out = _get_prior_iics(p, data, params)
+        p_out = _get_resource_iics(p, data, params)
         p_out["n_iic"] = p_out.iic / p_out.iic.max()
         p_out["label"] = [
-            _get_prior_translation(t, p, data, params, has_prefix=False)
+            _get_resource_translation(t, p, data, params, has_prefix=False)
             for t in p_out.index
         ]
-        p_out["prior"] = p
+        p_out["resource"] = p
         tmp.append(p_out)
     return pd.concat(tmp)
 
@@ -110,43 +110,45 @@ def _setup_eics(
 
     ``associations`` is a pd.DataFrame with nine columns: `antecedents`, `consequents`, `lift`, `pval`, `fdr`,
         `n_genes`, `genes`, `url_a` and `url_c`.
-    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``data`` is a dict associating resources (keys) to their contents (values).
     ``params`` is a dict of parameters.
 
     Returns
-        A dict associating priors (keys) to their group-specific annotation terms (values).
+        A dict associating resources (keys) to their group-specific annotation terms (values).
     """
-    f = np.vectorize(lambda C, P: _get_prior_inverse_translation(C, P, data, params))
+    f = np.vectorize(lambda C, P: _get_resource_inverse_translation(C, P, data, params))
     associations["inverse_consequents"] = f(
-        associations.consequents, associations.prior_c
+        associations.consequents, associations.resource_c
     )
     corpus = {
-        prior: group.groupby("antecedents")["inverse_consequents"].apply(set).to_dict()
-        for prior, group in associations.groupby("prior_c")
+        resource: group.groupby("antecedents")["inverse_consequents"]
+        .apply(set)
+        .to_dict()
+        for resource, group in associations.groupby("resource_c")
     }
     return corpus
 
 
-def _get_prior_eics(
-    prior: str,
+def _get_resource_eics(
+    resource: str,
     corpus: dict[str, dict[str, set[str]]],
     data: dict[str, Any],
     params: dict[str, Any],
 ) -> pd.DataFrame:
-    """Get the Extrinsic Information Content (EIC) of every term from a prior.
+    """Get the Extrinsic Information Content (EIC) of every term from a resource.
 
-    ``prior`` is a prior label.
-    ``corpus`` is a dict associating some priors (keys) to their group-specific annotation terms (values).
-    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``resource`` is a resource label.
+    ``corpus`` is a dict associating some resources (keys) to their group-specific annotation terms (values).
+    ``data`` is a dict associating resources (keys) to their contents (values).
     ``params`` is a dict of parameters.
 
     Returns
-        A pd.DataFrame where rows are terms, with four columns: `eic`, `n_eic`, `label` and `prior`.
+        A pd.DataFrame where rows are terms, with four columns: `eic`, `n_eic`, `label` and `resource`.
     """
-    tmp = {prior: {}}  # type: dict[str, dict[str, set[str]]]
-    for g, terms in corpus[prior].items():
-        lineage = _get_prior_ancestors(terms, prior, data, params) | terms
-        tmp[prior][g] = lineage
+    tmp = {resource: {}}  # type: dict[str, dict[str, set[str]]]
+    for g, terms in corpus[resource].items():
+        lineage = _get_resource_ancestors(terms, resource, data, params) | terms
+        tmp[resource][g] = lineage
 
     tm = _get_transaction_matrix(tmp)
     tm = tm.fillna(0)
@@ -154,9 +156,11 @@ def _get_prior_eics(
     tm = tm.apply(lambda x: -log2(x))
     out = pd.DataFrame(tm, columns=["eic"])
 
-    out["prior"] = prior
+    out["resource"] = resource
     out["n_eic"] = out.eic / out.eic.max()
-    out["label"] = [_get_prior_translation(t, prior, data, params) for t in out.index]
+    out["label"] = [
+        _get_resource_translation(t, resource, data, params) for t in out.index
+    ]
     return out
 
 
@@ -176,21 +180,21 @@ def get_eics(
     arXiv preprint cmp-lg/9511007 (1995).
     See: https://doi.org/10.48550/arXiv.cmp-lg/9511007
 
-    ``prior`` is a prior label.
-    ``corpus`` is a dict associating some priors (keys) to their group-specific annotation terms (values).
-    ``data`` is a dict associating priors (keys) to their contents (values).
+    ``resource`` is a resource label.
+    ``corpus`` is a dict associating some resources (keys) to their group-specific annotation terms (values).
+    ``data`` is a dict associating resources (keys) to their contents (values).
     ``params`` is a dict of parameters.
 
     Returns
-        A pd.DataFrame where rows are terms, with four columns: `eic`, `n_eic`, `label` and `prior`.
+        A pd.DataFrame where rows are terms, with four columns: `eic`, `n_eic`, `label` and `resource`.
     """
     tmp = []  # type: list[pd.DataFrame]
     for p in corpus.keys():
-        tmp.append(_get_prior_eics(p, corpus, data, params))
+        tmp.append(_get_resource_eics(p, corpus, data, params))
     eics = pd.concat(tmp)
 
     corpus_terms = set()  # type: set[str]
-    for prior, _tmp in corpus.items():
+    for resource, _tmp in corpus.items():
         for group, terms in _tmp.items():
             corpus_terms = corpus_terms | terms
 
