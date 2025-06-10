@@ -103,19 +103,19 @@ def _load_diseases(path: str) -> dict[str, dict[str, Any]]:
             `hierarchy`: a dict associating a MeSH ID to its parents in the hierarchy
             `translations`: a dict associating a MeSH ID to its human-readable label
     """
-    with open(f"{path}/DISE_a.json", "r") as file:
+    with open(f"{path}/MeSH_a.json", "r") as file:
         annotations = json.load(file)
     annotations = {
         _get_uniprot_id(gene): set(diseases) for gene, diseases in annotations.items()
     }
 
-    with open(f"{path}/DISE_h.json", "r") as file:
+    with open(f"{path}/MeSH_h.json", "r") as file:
         hierarchy = json.load(file)
     tmp = {meshid: set(parents) for meshid, parents in hierarchy.items()}
     roots = _get_roots_diseases()
     hierarchy = _prune_hierarchy({"hierarchy": tmp}, roots=roots)
 
-    with open(f"{path}/DISE_t.json", "r") as file:
+    with open(f"{path}/MeSH_t.json", "r") as file:
         translations = json.load(file)
         translations = {
             k: v for k, v in translations.items() if k in hierarchy.keys()
@@ -146,11 +146,11 @@ def _load_gene_groups(path: str) -> dict[str, dict[str, Any]]:
     """
     annotations = hgnc.hgnc_genegroups()
 
-    with open(f"{path}/GENG_h.json", "r") as file:
+    with open(f"{path}/HGNC_h.json", "r") as file:
         hierarchy = json.load(file)
     hierarchy = {gene_group: set(parents) for gene_group, parents in hierarchy.items()}
 
-    with open(f"{path}/GENG_t.json", "r") as file:
+    with open(f"{path}/HGNC_t.json", "r") as file:
         translations = json.load(file)
 
     # assign a meta-root to the hierarchy:
@@ -178,15 +178,15 @@ def _load_pathways(path: str) -> dict[str, dict[str, Any]]:
             `hierarchy`: a dict associating a pathway to its parents in the hierarchy
             `translations`: a dict associating a pathway to its human-readable label
     """
-    with open(f"{path}/PATH_a.json", "r") as file:
+    with open(f"{path}/Reactome_a.json", "r") as file:
         annotations = json.load(file)
     annotations = {uid: set(paths) for uid, paths in annotations.items()}
 
-    with open(f"{path}/PATH_h.json", "r") as file:
+    with open(f"{path}/Reactome_h.json", "r") as file:
         hierarchy = json.load(file)
     hierarchy = {path: set(parents) for path, parents in hierarchy.items()}
 
-    with open(f"{path}/PATH_t.json", "r") as file:
+    with open(f"{path}/Reactome_t.json", "r") as file:
         translations = json.load(file)
 
     # assign a meta-root to the hierarchy:
