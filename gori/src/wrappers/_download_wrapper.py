@@ -42,7 +42,7 @@ def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
             response = requests.get(url)
             with open(f"{_path}/{file}", "wb") as output:
                 output.write(response.content)  
-            log.write(f"\t\t\t DONE ({_get_timestamp()})")
+            log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
 
     annotations = pd.read_excel(f"{_path}/raw_CellMarker2_annotations.xlsx")
     annotations = annotations[["cellontology_id", "UNIPROTID"]]
@@ -69,7 +69,7 @@ def _download_celltaxonomy_cell_types(path: str, params: dict[str, Any]) -> None
         for file, url in resources.items():
             log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
             _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t\t DONE ({_get_timestamp()})")
+            log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
 
     annotations = pd.read_csv(f"{_path}/raw_CellTaxonomy_annotations.txt", sep="\t")
     annotations = annotations.loc[annotations.Species == "Homo sapiens"]
@@ -95,7 +95,7 @@ def _download_diseases(path: str, params: dict[str, Any]) -> None:
         for file, url in resources.items():
             log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
             _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t\t DONE ({_get_timestamp()})")
+            log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
 
     with gzip.open(f"{_path}/raw_CTD_annotations.csv.gz", "rb") as f_in:
         with open(f"{_path}/raw_CTD_annotations.csv", "wb") as f_out:
@@ -126,7 +126,7 @@ def _download_gene_groups(path: str, params: dict[str, Any]) -> None:
         for file, url in resources.items():
             log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
             _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t\t DONE ({_get_timestamp()})")
+            log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
 
 
 def _download_pathways(path: str, params: dict[str, Any]) -> None:
@@ -145,4 +145,4 @@ def _download_pathways(path: str, params: dict[str, Any]) -> None:
         for file, url in resources.items():
             log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
             _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t\t DONE ({_get_timestamp()})")
+            log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
