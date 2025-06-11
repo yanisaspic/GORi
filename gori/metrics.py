@@ -11,7 +11,6 @@ from gori.src.utils import (
     _get_resource_ancestors,
     _get_resource_boundaries,
     _get_resource_descendants,
-    _get_resource_inverse_translation,
     _get_resource_terms,
     _get_transaction_matrix,
     _get_resource_translation,
@@ -86,7 +85,7 @@ def get_iics(
     ``params`` is a dict of parameters.
 
     Returns
-        A pd.DataFrame where rows are terms, with four columns: `iic`, `label`, `n_iic` and `resource`.
+        A pd.DataFrame where rows are terms, with three columns: `iic`, `n_iic`, `label` and `resource`.
     """
     tmp = []
     for p in data.keys():
@@ -108,20 +107,15 @@ def _setup_eics(
 ) -> dict[str, dict[str, set[str]]]:
     """Setup the results of a GORI enrichment analysis to compute the Extrinsic Information Content (EIC) of terms.
 
-    ``associations`` is a pd.DataFrame with nine columns: `antecedents`, `consequents`, `lift`, `pval`, `fdr`,
-        `n_genes`, `genes`, `url_a` and `url_c`.
+    ``associations`` is a pd.DataFrame with three columns: `antecedents`, `id_c` and `resource_c`.
     ``data`` is a dict associating resources (keys) to their contents (values).
     ``params`` is a dict of parameters.
 
     Returns
         A dict associating resources (keys) to their group-specific annotation terms (values).
     """
-    f = np.vectorize(lambda C, P: _get_resource_inverse_translation(C, P, data, params))
-    associations["inverse_consequents"] = f(
-        associations.consequents, associations.resource_c
-    )
     corpus = {
-        resource: group.groupby("antecedents")["inverse_consequents"]
+        resource: group.groupby("antecedents")["id_c"]
         .apply(set)
         .to_dict()
         for resource, group in associations.groupby("resource_c")

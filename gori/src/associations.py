@@ -300,7 +300,7 @@ def _enrich_associations(
     )
     for col in ["antecedents", "consequents"]:
         p = f"resource_{col[0]}"
-        associations[f"id_{col[0]}"] = associations[col]
+        associations[f"id_{col[0]}"] = [t.split(":", 1)[1] for t in associations[col]]
         associations[f"url_{col[0]}"] = g(associations[col], associations[p])
         associations[col] = h(associations[col], associations[p])
 
