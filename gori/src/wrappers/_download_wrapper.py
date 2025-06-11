@@ -25,6 +25,31 @@ def _download_file(url: str, path: str) -> None:
                     f.write(chunk)
 
 
+def _download_resource(resources: dict[str, str], path: str, has_excel: bool = False) -> None:
+    """Download a collection of files.
+
+    ``resources`` is a dict associating resource files and their urls.
+    ``path`` is a path to store the downloaded files.
+    ``has_excel`` is a boolean indicating if a resource includes an .xlsx file.
+    """
+    for file, url in resources.items():
+        log = open("./downloads.log", "a")
+        log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
+        log.close()
+
+        if has_excel:   # using chunks yielded Excel corrupted files.
+            response = requests.get(url)
+            with open(f"{path}/{file}", "wb") as output:
+                output.write(response.content)  
+        else:
+            _download_file(url, f"{path}/{file}")
+
+        log = open("./downloads.log", "a")        
+        log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
+        log.close()
+
+
+
 def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
     """Download knowledge bases associated to cell types and CellMarker 2.0.
 
@@ -34,15 +59,8 @@ def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
     _path = f"{path}/cell_types"
     if not os.path.isdir(_path):
         os.mkdir(_path)
-
-    resources = params["wrappers"]["resources_wrapper"]["CellMarker2"]
-    with open("./downloads.log", "a") as log:
-        for file, url in resources.items():
-            log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
-            response = requests.get(url)
-            with open(f"{_path}/{file}", "wb") as output:
-                output.write(response.content)  
-            log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
+    resource = params["wrappers"]["resources_wrapper"]["CellMarker2"]
+    _download_resource(resource, _path, has_excel=True)
 
     annotations = pd.read_excel(f"{_path}/raw_CellMarker2_annotations.xlsx")
     annotations = annotations[["cellontology_id", "UNIPROTID"]]
@@ -63,13 +81,8 @@ def _download_celltaxonomy_cell_types(path: str, params: dict[str, Any]) -> None
     _path = f"{path}/cell_types"
     if not os.path.isdir(_path):
         os.mkdir(_path)
-
-    resources = params["wrappers"]["resources_wrapper"]["CellTaxonomy"]
-    with open("./downloads.log", "a") as log:
-        for file, url in resources.items():
-            log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
-            _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
+    resource = params["wrappers"]["resources_wrapper"]["CellTaxonomy"]
+    _download_resource(resource, _path)
 
     annotations = pd.read_csv(f"{_path}/raw_CellTaxonomy_annotations.txt", sep="\t")
     annotations = annotations.loc[annotations.Species == "Homo sapiens"]
@@ -89,13 +102,8 @@ def _download_diseases(path: str, params: dict[str, Any]) -> None:
     _path = f"{path}/diseases"
     if not os.path.isdir(_path):
         os.mkdir(_path)
-
-    resources = params["wrappers"]["resources_wrapper"]["MeSH"]
-    with open("./downloads.log", "a") as log:
-        for file, url in resources.items():
-            log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
-            _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
+    resource = params["wrappers"]["resources_wrapper"]["MeSH"]
+    _download_resource(resource, _path)
 
     with gzip.open(f"{_path}/raw_CTD_annotations.csv.gz", "rb") as f_in:
         with open(f"{_path}/raw_CTD_annotations.csv", "wb") as f_out:
@@ -120,13 +128,8 @@ def _download_gene_groups(path: str, params: dict[str, Any]) -> None:
     _path = f"{path}/gene_groups"
     if not os.path.isdir(_path):
         os.mkdir(_path)
-
-    resources = params["wrappers"]["resources_wrapper"]["HGNC"]
-    with open("./downloads.log", "a") as log:
-        for file, url in resources.items():
-            log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
-            _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
+    resource = params["wrappers"]["resources_wrapper"]["HGNC"]
+    _download_resource(resource, _path)
 
 
 def _download_pathways(path: str, params: dict[str, Any]) -> None:
@@ -139,10 +142,5 @@ def _download_pathways(path: str, params: dict[str, Any]) -> None:
     _path = f"{path}/pathways"
     if not os.path.isdir(_path):
         os.mkdir(_path)
-
-    resources = params["wrappers"]["resources_wrapper"]["Reactome"]
-    with open("./downloads.log", "a") as log:
-        for file, url in resources.items():
-            log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
-            _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
+    resource = params["wrappers"]["resources_wrapper"]["Reactome"]
+    _download_resource(resource, _path)
