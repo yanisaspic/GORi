@@ -32,9 +32,9 @@ def download_resources(
     for p in resources:
         log = open("./downloads.log", "a")
         log.write(f"\t Downloading {p} resource ({_get_timestamp()})\n")
-        log.close()
         download_wrapper[p](path, params)
         log.write(f"\t DONE ({_get_timestamp()})\n")
+        log.close()
 
     log = open("./downloads.log", "a")
     log.write(f"DONE ({_get_timestamp()})")
