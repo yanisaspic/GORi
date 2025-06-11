@@ -23,7 +23,7 @@ def download_resources(
     """
     download_wrapper = params["wrappers"]["download_wrapper"]
     log = open("./downloads.log", "w")
-    log.write(f"{_get_timestamp()}: Running downloads_resources.py\n")
+    log.write(f"Running downloads_resources.py ({_get_timestamp()})\n")
     log.close()
 
     if not os.path.isdir(path):
@@ -31,7 +31,7 @@ def download_resources(
 
     for p in resources:
         log = open("./downloads.log", "a")
-        log.write(f"\t {_get_timestamp()}: Downloading {p}\n")
+        log.write(f"\t Downloading {p} resource ({_get_timestamp()})\n")
         log.close()
         download_wrapper[p](path, params)
 

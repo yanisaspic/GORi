@@ -38,8 +38,11 @@ def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
     resources = params["wrappers"]["resources_wrapper"]["CellMarker2"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
-            _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
+            log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
+            response = requests.get(url)
+            with open(f"{_path}/{file}", "wb") as output:
+                output.write(response.content)  
+            log.write(f"\t\t\t DONE ({_get_timestamp()})")
 
     annotations = pd.read_excel(f"{_path}/raw_CellMarker2_annotations.xlsx")
     annotations = annotations[["cellontology_id", "UNIPROTID"]]
@@ -64,8 +67,9 @@ def _download_celltaxonomy_cell_types(path: str, params: dict[str, Any]) -> None
     resources = params["wrappers"]["resources_wrapper"]["CellTaxonomy"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
+            log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
             _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
+            log.write(f"\t\t\t DONE ({_get_timestamp()})")
 
     annotations = pd.read_csv(f"{_path}/raw_CellTaxonomy_annotations.txt", sep="\t")
     annotations = annotations.loc[annotations.Species == "Homo sapiens"]
@@ -89,8 +93,9 @@ def _download_diseases(path: str, params: dict[str, Any]) -> None:
     resources = params["wrappers"]["resources_wrapper"]["MeSH"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
+            log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
             _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
+            log.write(f"\t\t\t DONE ({_get_timestamp()})")
 
     with gzip.open(f"{_path}/raw_CTD_annotations.csv.gz", "rb") as f_in:
         with open(f"{_path}/raw_CTD_annotations.csv", "wb") as f_out:
@@ -119,8 +124,9 @@ def _download_gene_groups(path: str, params: dict[str, Any]) -> None:
     resources = params["wrappers"]["resources_wrapper"]["HGNC"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
+            log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
             _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
+            log.write(f"\t\t\t DONE ({_get_timestamp()})")
 
 
 def _download_pathways(path: str, params: dict[str, Any]) -> None:
@@ -137,5 +143,6 @@ def _download_pathways(path: str, params: dict[str, Any]) -> None:
     resources = params["wrappers"]["resources_wrapper"]["Reactome"]
     with open("./downloads.log", "a") as log:
         for file, url in resources.items():
+            log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
             _download_file(url, f"{_path}/{file}")
-            log.write(f"\t\t {_get_timestamp()}: Downloaded {file} from {url}\n")
+            log.write(f"\t\t\t DONE ({_get_timestamp()})")
