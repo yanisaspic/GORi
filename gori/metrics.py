@@ -115,9 +115,7 @@ def _setup_eics(
         A dict associating resources (keys) to their group-specific annotation terms (values).
     """
     corpus = {
-        resource: group.groupby("antecedents")["id_c"]
-        .apply(set)
-        .to_dict()
+        resource: group.groupby("antecedents")["id_c"].apply(set).to_dict()
         for resource, group in associations.groupby("resource_c")
     }
     return corpus
