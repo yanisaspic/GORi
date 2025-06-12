@@ -10,7 +10,7 @@ from gori.src.utils import _get_timestamp
 
 
 def download_resources(
-    resources: set[str] = {"CellMarker2", "HGNC", "Reactome"},
+    resources: set[str] = {"CellMarker2", "CellTaxonomy", "HGNC", "Reactome"},
     path: str = "./.resources",
     params: dict[str, Any] = get_parameters(),
 ) -> None:
@@ -31,13 +31,13 @@ def download_resources(
 
     for p in resources:
         log = open("./downloads.log", "a")
-        log.write(f"\t +++ Downloading {p} resource ({_get_timestamp()})\n")
+        log.write(f"\t +++ {p} resource ({_get_timestamp()})\n")
         log.close()
 
         download_wrapper[p](path, params)
 
         log = open("./downloads.log", "a")
-        log.write(f"\t DONE ({_get_timestamp()})\n")
+        log.write(f"\t --- DONE ({_get_timestamp()})\n")
         log.close()
 
     log = open("./downloads.log", "a")
@@ -46,7 +46,7 @@ def download_resources(
 
 
 def setup_resources(
-    resources: set[str] = {"CellMarker2", "HGNC", "Reactome"},
+    resources: set[str] = {"CellMarker2", "CellTaxonomy", "HGNC", "Reactome"},
     dl_path: str = "./.resources",
     su_path: str = "./resources",
     remove_dl: bool = True,

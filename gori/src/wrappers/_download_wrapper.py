@@ -25,27 +25,21 @@ def _download_file(url: str, path: str) -> None:
                     f.write(chunk)
 
 
-def _download_resource(resources: dict[str, str], path: str, has_excel: bool = False) -> None:
+def _download_resource(resources: dict[str, str], path: str) -> None:
     """Download a collection of files.
 
     ``resources`` is a dict associating resource files and their urls.
     ``path`` is a path to store the downloaded files.
-    ``has_excel`` is a boolean indicating if a resource includes an .xlsx file.
     """
     for file, url in resources.items():
         log = open("./downloads.log", "a")
-        log.write(f"\t\t Downloading {file} from {url} ({_get_timestamp()})\n")
+        log.write(f"\t\t + {file} from {url} ({_get_timestamp()})\n")
         log.close()
 
-        if has_excel:   # using chunks yielded Excel corrupted files.
-            response = requests.get(url)
-            with open(f"{path}/{file}", "wb") as output:
-                output.write(response.content)  
-        else:
-            _download_file(url, f"{path}/{file}")
+        _download_file(url, f"{path}/{file}")
 
         log = open("./downloads.log", "a")        
-        log.write(f"\t\t\t DONE ({_get_timestamp()})\n")
+        log.write(f"\t\t - DONE ({_get_timestamp()})\n")
         log.close()
 
 
@@ -60,7 +54,7 @@ def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
     if not os.path.isdir(_path):
         os.mkdir(_path)
     resource = params["wrappers"]["resources_wrapper"]["CellMarker2"]
-    _download_resource(resource, _path, has_excel=True)
+    _download_resource(resource, _path)
 
     annotations = pd.read_excel(f"{_path}/raw_CellMarker2_annotations.xlsx")
     annotations = annotations[["cellontology_id", "UNIPROTID"]]
