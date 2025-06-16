@@ -31,6 +31,7 @@ def _get_stopwords() -> set[str]:
     return {
         "-",
         "a",
+        "abnormality",
         "about",
         "above",
         "across",
@@ -55,17 +56,22 @@ def _get_stopwords() -> set[str]:
         "being",
         "below",
         "between",
+        "biological",
         "both",
         "but",
         "by",
         "can",
+        "cell",
+        "cellular",
         "co",
+        "component",
         "couldn",
         "couldn't",
         "d",
         "did",
         "didn",
         "didn't",
+        "disease",
         "do",
         "does",
         "doesn",
@@ -79,8 +85,11 @@ def _get_stopwords() -> set[str]:
         "few",
         "for",
         "from",
+        "function",
         "further",
         "g",
+        "gene",
+        "group",
         "had",
         "hadn",
         "hadn't",
@@ -120,6 +129,7 @@ def _get_stopwords() -> set[str]:
         "me",
         "mightn",
         "mightn't",
+        "molecular",
         "more",
         "most",
         "mustn",
@@ -148,9 +158,12 @@ def _get_stopwords() -> set[str]:
         "over",
         "own",
         "p",
+        "pathway",
         "pd",
+        "phenotypic",
         "pre",
         "pro",
+        "process",
         "post",
         "re",
         "s",
@@ -253,7 +266,6 @@ def get_parameters() -> dict[str, Any]:
 
     The parameters are stored in a dict:
         `n_genes_threshold` and `pvalues_threshold` are numerics used to filter out weak associations.
-        `use_heuristic` is a boolean indicating if the heuristic approach should be used by GORi.
         `use_gene_symbol` is a boolean indicating if the gene symbols should be used.
         `sheets_path` is a path where the results of the analysis will be stored.
         "report_path" is a path where the HTML report will be stored.
@@ -261,13 +273,12 @@ def get_parameters() -> dict[str, Any]:
         `stopwords` is a set of words that should not be used in GORi.
 
     Returns
-        A dict with 8 keys: `n_genes_threshold`, `pvalue_threshold`, `use_heuristic`,
+        A dict with 7 keys: `n_genes_threshold`, `pvalue_threshold`,
         `use_gene_symbol`, `sheets_path`, `report_path`, `wrappers` and `stopwords`.
     """
     parameters = {
         "n_genes_threshold": 5,
         "pvalue_threshold": 0.05,
-        "use_heuristic": True,
         "use_gene_symbol": True,
         "sheets_path": "./GORi.xlsx",
         "report_path": "./GORi.html",

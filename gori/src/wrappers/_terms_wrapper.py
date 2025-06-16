@@ -7,7 +7,7 @@ from pypath.utils.go import GOAnnotation
 
 
 def _get_ctyp_terms(resource: dict[str, Any]) -> set[str]:
-    """Get every term in the CellMarker2 knowledge base.
+    """Get every term in the Cell Ontology knowledge base.
 
     ``resource`` is a dict with two keys: "annotations" and "ontology".
 

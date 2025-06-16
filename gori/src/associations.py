@@ -122,7 +122,6 @@ def _get_significant_associations(
         return associations.loc[associations.fdr < params["pvalue_threshold"]]
     return associations.loc[associations.pval < params["pvalue_threshold"]]
 
-
 def _get_lift_threshold(
     associations: pd.DataFrame, transaction_matrix: pd.DataFrame, params: dict[str, Any]
 ) -> float:
@@ -136,22 +135,21 @@ def _get_lift_threshold(
         A float.
     """
     associations = associations.reset_index(drop=True)
-    f = np.vectorize(lambda A, C: _get_fisher_exact(A, C, transaction_matrix))
-    strong_index = 0  # index of the weakest `strong` association
-    weak_index = (
+    upper_index = 0  # index of the weakest `strong` association
+    lower_index = (
         len(associations.index) - 1
     )  # index of the strongest `weak` association
 
-    while weak_index - strong_index > 1:  # binary search
-        frontier_index = (weak_index + strong_index) // 2
-        tmp = associations.loc[associations.lift == associations.lift[frontier_index]]
-        pvals = f(tmp.antecedents, tmp.consequents)
-        if np.median(pvals) < params["pvalue_threshold"]:
-            strong_index = tmp.index[-1]
+    while lower_index - upper_index > 1:  # binary search
+        center_index = (lower_index + upper_index) // 2
+        tmp = associations.iloc[center_index]
+        pvalue = _get_fisher_exact(tmp.antecedents, tmp.consequents, transaction_matrix)
+        if pvalue < params["pvalue_threshold"]:
+            upper_index = center_index
         else:
-            weak_index = tmp.index[0]
+            lower_index = center_index
 
-    lift_threshold = associations.lift.iloc[weak_index]
+    lift_threshold = associations.lift.iloc[lower_index]
     return lift_threshold
 
 
@@ -167,13 +165,9 @@ def _get_strong_associations(
     Returns
         A pd.DataFrame with five or more columns: `antecedents`, `consequents`, `lift`, `resource_a`, `resource_c` and `pval`
     """
-    if params["use_heuristic"]:
-        lift_threshold = _get_lift_threshold(associations, transaction_matrix, params)
-        return associations.loc[associations.lift > lift_threshold]
-    associations = _get_significant_associations(
-        associations, transaction_matrix, params, fdr=False
-    )
-    return associations
+    lift_threshold = _get_lift_threshold(associations, transaction_matrix, params)
+    strong_associations = associations.loc[associations.lift > lift_threshold]
+    return strong_associations
 
 
 def _get_unique_terms(
@@ -357,9 +351,7 @@ def _get_associations(
         )
         associations_counter["strong"] = len(associations.index)
         if len(associations.index) == 0:
-            print(
-                f"No strong associations found using {params['use_heuristic']} approach."
-            )
+            print(f"No strong associations found using a heuristic.")
             break
 
         # Associations are filtered by redundancy

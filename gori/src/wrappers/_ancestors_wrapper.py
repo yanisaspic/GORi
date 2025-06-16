@@ -10,14 +10,14 @@ from pypath.utils.go import GOAnnotation
 def _get_ctyp_ancestors(
     terms: set[str], resource: dict[str, dict[str, Any]]
 ) -> set[str]:
-    """Get every CellMarker2 ancestor terms.
-    A term is ancestor if at least one of the input CellMarker2 ontology term descends from it.
+    """Get every Cell Ontology ancestor terms.
+    A term is ancestor if at least one of the input Cell Ontology term descends from it.
 
-    ``terms`` is a set of CellMarker2 ontology terms.
+    ``terms`` is a set of Cell Ontology terms.
     ``resource`` is a dict with two keys: "annotations" and "ontology".
 
     Returns
-        A set of CellMarker2 ids.
+        A set of Cell Ontology ids.
     """
     tmp = [nx.ancestors(resource["ontology"], t) for t in terms]
     ancestors = {ancestor for ancestors0 in tmp for ancestor in ancestors0}

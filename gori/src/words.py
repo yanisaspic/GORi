@@ -43,16 +43,6 @@ def _get_words_scores(
     Returns
         A pd.DataFrame where rows are groups, columns are words, and cell values are scores.
     """
-    # filter out root words
-    root_words = set()  # type: set[str]
-    for p in data.keys():
-        tmp = _get_resource_boundaries(p, data, params)["roots"]
-        roots = {
-            _get_resource_translation(r, p, data, params, has_prefix=False) for r in tmp
-        }
-        for r in roots:
-            root_words = root_words | _get_words0(r, params)
-
     pairs = associations.groupby("antecedents")["consequents"].apply(set).to_dict()
     weights = {
         a: dict(group[["consequents", "lift"]].values)
@@ -70,6 +60,5 @@ def _get_words_scores(
         _scores.append(wm)
 
     scores = pd.concat(_scores, axis=1)
-    scores = scores.drop(root_words, axis=0, errors="ignore")
     scores.index.name = "word"
     return scores

@@ -7,9 +7,9 @@ from pypath.utils.go import GOAnnotation
 
 
 def _get_ctyp_translation(term: str, resource: dict[str, Any]) -> str:
-    """Get the human-readable label of a CellMarker2 annotation.
+    """Get the human-readable label of a Cell Ontology annotation.
 
-    ``term`` is a CellMarker2 annotation.
+    ``term`` is a Cell Ontology annotation.
     ``resource`` is a dict with two keys: "annotations" and "ontology".
 
     Returns

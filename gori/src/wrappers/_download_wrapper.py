@@ -64,7 +64,7 @@ def _download_cellmarker2_cell_types(path: str, params: dict[str, Any]) -> None:
     _download_resource(resource, _path, has_xlsx=True)
 
     annotations = pd.read_excel(f"{_path}/raw_CellMarker2_annotations.xlsx")
-    annotations = annotations[["cellontology_id", "UNIPROTID"]]
+    annotations = annotations[["tissue_class", "cellontology_id", "UNIPROTID"]]
     annotations = annotations.dropna()
     annotations.cellontology_id = [
         i.replace("_", ":") for i in annotations.cellontology_id
@@ -87,7 +87,9 @@ def _download_celltaxonomy_cell_types(path: str, params: dict[str, Any]) -> None
 
     annotations = pd.read_csv(f"{_path}/raw_CellTaxonomy_annotations.txt", sep="\t")
     annotations = annotations.loc[annotations.Species == "Homo sapiens"]
-    annotations = annotations[["Specific_Cell_Ontology_ID", "Uniprot"]]
+    annotations = annotations[
+        ["Tissue_standard", "Specific_Cell_Ontology_ID", "Uniprot"]
+    ]
     annotations = annotations.dropna()
     annotations.to_csv(f"{_path}/CellTaxonomy_annotations.csv")
     os.remove(f"{_path}/raw_CellTaxonomy_annotations.txt")

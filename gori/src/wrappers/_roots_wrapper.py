@@ -1,5 +1,5 @@
 """Functions used by roots_wrapper().
-    Roots are manually defined for GO and CellMarker2 due to their specific data structures.
+    Roots are manually defined for GO and Cell Ontology due to their specific data structures.
 
     2025/05/26 @yanisaspic"""
 
@@ -23,7 +23,7 @@ def _get_celc_roots() -> set[str]:
 
 
 def _get_ctyp_roots() -> set[str]:
-    """Get the roots of the CellMarker2 resource.
+    """Get the roots of the Cell Ontology resource.
 
     Returns
         A set of CL ids.

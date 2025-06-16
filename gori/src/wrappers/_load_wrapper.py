@@ -14,7 +14,7 @@ def _load_cell_types(path: str, label: str) -> dict[str, Any]:
     """Load the cell types knowledge base.
 
     ``path`` is the path to the JSON and OBO files containing the cell types knowledge base.
-    ``label`` is one of CellMarker2 or CellTaxonomy.
+    ``label`` is one of CellMarker2 or CellTaxonomy tissue-specific labels.
 
     Returns
         A dict with two keys:
@@ -31,32 +31,6 @@ def _load_cell_types(path: str, label: str) -> dict[str, Any]:
         for uid, cells in annotations.items()
     }
     return {"annotations": annotations, "ontology": ontology}
-
-
-def _load_cellmarker2_cell_types(path: str) -> dict[str, Any]:
-    """Load the cell types knowledge base with CellMarker 2.0 annotations.
-
-    ``path`` is the path to the JSON and OBO files containing the cell types knowledge base.
-
-    Returns
-    A dict with two keys:
-        `annotations`: a dict associating a Uniprot ID to its associated cell types
-        `ontology`: a graph associating a cell type to its parents in the hierarchy and its human-readable label.
-    """
-    return _load_cell_types(path, "CellMarker2")
-
-
-def _load_celltaxonomy_cell_types(path: str) -> dict[str, Any]:
-    """Load the cell types knowledge base with CellMarker 2.0 annotations.
-
-    ``path`` is the path to the JSON and OBO files containing the cell types knowledge base.
-
-    Returns
-    A dict with two keys:
-        `annotations`: a dict associating a Uniprot ID to its associated cell types
-        `ontology`: a graph associating a cell type to its parents in the hierarchy and its human-readable label.
-    """
-    return _load_cell_types(path, "CellTaxonomy")
 
 
 def _get_roots_diseases() -> set[str]:
@@ -156,9 +130,9 @@ def _load_gene_groups(path: str) -> dict[str, dict[str, Any]]:
     # assign a meta-root to the hierarchy:
     roots = set(translations.values()).difference(set(hierarchy.keys()))
     for r in roots:
-        hierarchy[r] = {"gene_group"}
+        hierarchy[r] = {"gene group"}
     roots = set(translations.values()).difference(set(hierarchy.keys()))
-    translations["gene_group"] = "gene_group"
+    translations["gene group"] = "gene group"
 
     return {
         "annotations": annotations,

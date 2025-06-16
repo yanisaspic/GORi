@@ -81,8 +81,6 @@ def gorilon(
     resources: set[str] = {
         "GO_BP",
         "GO_CC",
-        "CellMarker2",
-        "CellTaxonomy",
         "GO_MF",
         "Reactome",
     },

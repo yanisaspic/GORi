@@ -139,6 +139,8 @@ def _get_resource_ancestors(
     ancestors_wrapper = params["wrappers"]["ancestors_wrapper"]
     if resource in ancestors_wrapper.keys():
         return ancestors_wrapper[resource](terms, data[resource])
+    elif resource.startswith(("CellMarker2", "CellTaxonomy")):
+        return ancestors_wrapper["CellMarker2"](terms, data[resource])
     return _get_generic_ancestors(terms, data[resource])
 
 
@@ -158,6 +160,8 @@ def _get_resource_descendants(
     descendants_wrapper = params["wrappers"]["descendants_wrapper"]
     if resource in descendants_wrapper.keys():
         return descendants_wrapper[resource](terms, data[resource])
+    elif resource.startswith(("CellMarker2", "CellTaxonomy")):
+        return descendants_wrapper["CellMarker2"](terms, data[resource])
     return _get_generic_descendants(terms, data[resource])
 
 
@@ -217,6 +221,8 @@ def _get_resource_translation(
         term = term.split(":", 1)[1]
     if resource in translate_wrapper.keys():
         return translate_wrapper[resource](term, data[resource])
+    elif resource.startswith(("CellMarker2", "CellTaxonomy")):
+        return translate_wrapper["CellMarker2"](term, data[resource])
     return _get_generic_translation(term)
 
 
@@ -251,6 +257,8 @@ def _get_resource_inverse_translation(
     inverse_translate_wrapper = params["wrappers"]["inverse_translate_wrapper"]
     if resource in inverse_translate_wrapper.keys():
         return inverse_translate_wrapper[resource](label, data[resource])
+    elif resource.startswith(("CellMarker2", "CellTaxonomy")):
+        return inverse_translate_wrapper["CellMarker2"](label, data[resource])
     return _get_generic_inverse_translation(label, data[resource])
 
 
@@ -276,6 +284,8 @@ def _get_resource_url(
         if resource in urls_wrapper:
             return urls_wrapper[resource](tmp, headers_wrapper[resource], data)
         return _get_generic_url(tmp)
+    elif resource.startswith(("CellMarker2", "CellTaxonomy")):
+        return urls_wrapper["CellMarker2"](tmp, headers_wrapper["CellMarker2"], data)
     return None
 
 
@@ -305,6 +315,8 @@ def _get_resource_terms(
     terms_wrapper = params["wrappers"]["terms_wrapper"]
     if resource in terms_wrapper.keys():
         return terms_wrapper[resource](data[resource])
+    elif resource.startswith(("CellMarker2", "CellTaxonomy")):
+        return terms_wrapper["CellMarker2"](data[resource])
     return _get_generic_terms(data[resource])
 
 
@@ -324,6 +336,8 @@ def _get_resource_boundaries(
     roots_wrapper = params["wrappers"]["roots_wrapper"]
     if resource in roots_wrapper.keys():
         roots = roots_wrapper[resource]()
+    elif resource.startswith(("CellMarker2", "CellTaxonomy")):
+        roots = roots_wrapper["CellMarker2"]()
     else:
         roots = terms.difference(
             _get_resource_descendants(terms, resource, data, params)

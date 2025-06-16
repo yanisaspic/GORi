@@ -19,10 +19,14 @@ def _setup_cellmarker2_cell_types(dl_path: str, su_path: str) -> None:
     """
     _dl_path = f"{dl_path}/cell_types"
     annotations = pd.read_csv(f"{_dl_path}/CellMarker2_annotations.csv", index_col=0)
-    annotations = annotations.groupby("UNIPROTID")["cellontology_id"].apply(list)
-    annotations = annotations.to_dict()
-    with open(f"{su_path}/CellMarker2_a.json", "w") as file:
-        json.dump(annotations, file)
+
+    for tissue in annotations.tissue_class.unique():
+        tmp = annotations.loc[annotations.tissue_class == tissue]
+        tmp = tmp.groupby("UNIPROTID")["cellontology_id"].apply(list)
+        tmp = tmp.to_dict()
+        with open(f"{su_path}/CellMarker2_{tissue}_a.json", "w") as file:
+            json.dump(tmp, file)
+
     if os.path.exists(f"{_dl_path}/cell_types_ontology.obo"):
         os.rename(
             f"{_dl_path}/cell_types_ontology.obo", f"{su_path}/cell_types_ontology.obo"
@@ -38,16 +42,16 @@ def _setup_celltaxonomy_cell_types(dl_path: str, su_path: str) -> None:
     """
     _dl_path = f"{dl_path}/cell_types"
     annotations = pd.read_csv(f"{_dl_path}/CellTaxonomy_annotations.csv")
-    # split rows with multiple uniprot ids into multiple rows with a single id:
-    annotations = annotations.assign(
-        Uniprot=annotations.Uniprot.str.split(",")
-    ).explode("Uniprot")
-    annotations = annotations.groupby("Uniprot")["Specific_Cell_Ontology_ID"].apply(
-        list
-    )
-    annotations = annotations.to_dict()
-    with open(f"{su_path}/CellTaxonomy_a.json", "w") as file:
-        json.dump(annotations, file)
+
+    for tissue in annotations.Tissue_standard.unique():
+        tmp = annotations.loc[annotations.Tissue_standard == tissue]
+        # split rows with multiple uniprot ids into multiple rows with a single id:
+        tmp = tmp.assign(Uniprot=tmp.Uniprot.str.split(",")).explode("Uniprot")
+        tmp = tmp.groupby("Uniprot")["Specific_Cell_Ontology_ID"].apply(list)
+        tmp = tmp.to_dict()
+        with open(f"{su_path}/CellTaxonomy_{tissue}_a.json", "w") as file:
+            json.dump(tmp, file)
+
     if os.path.exists(f"{_dl_path}/cell_types_ontology.obo"):
         os.rename(
             f"{_dl_path}/cell_types_ontology.obo", f"{su_path}/cell_types_ontology.obo"

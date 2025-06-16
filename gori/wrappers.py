@@ -30,8 +30,7 @@ from gori.src.wrappers._inverse_translate_wrapper import (
     _get_go_inverse_translation,
 )
 from gori.src.wrappers._load_wrapper import (
-    _load_cellmarker2_cell_types,
-    _load_celltaxonomy_cell_types,
+    _load_cell_types,
     _load_diseases,
     _load_gene_groups,
     _load_gene_ontology,
@@ -82,8 +81,7 @@ def ancestors_wrapper() -> dict[str, Callable]:
     return {
         "GO_BP": _get_go_ancestors,
         "GO_CC": _get_go_ancestors,
-        "CellMarker2": _get_ctyp_ancestors,
-        "CellTaxonomy": _get_ctyp_ancestors,
+        "CellMarker2": _get_ctyp_ancestors,  # CellTaxonomy uses the same function
         "GO_MF": _get_go_ancestors,
     }
 
@@ -103,8 +101,7 @@ def annotations_wrapper() -> dict[str, Callable]:
     return {
         "GO_BP": _get_biop_annotations,
         "GO_CC": _get_celc_annotations,
-        "CellMarker2": _get_ctyp_annotations,
-        "CellTaxonomy": _get_ctyp_annotations,
+        "CellMarker2": _get_ctyp_annotations,  # CellTaxonomy uses the same function
         "MeSH": _get_dise_annotations,
         "HGNC": _get_geng_annotations,
         "GO_MF": _get_molf_annotations,
@@ -125,8 +122,7 @@ def descendants_wrapper() -> dict[str, Callable]:
     return {
         "GO_BP": _get_go_descendants,
         "GO_CC": _get_go_descendants,
-        "CellMarker2": _get_ctyp_descendants,
-        "CellTaxonomy": _get_ctyp_descendants,
+        "CellMarker2": _get_ctyp_descendants,  # CellTaxonomy uses the same function
         "GO_MF": _get_go_descendants,
     }
 
@@ -160,8 +156,7 @@ def headers_wrapper() -> dict[str, str]:
     headers = {
         "GO_BP": "www.ebi.ac.uk/QuickGO/term/",
         "GO_CC": "www.ebi.ac.uk/QuickGO/term/",
-        "CellMarker2": f"www.ebi.ac.uk/ols4/ontologies/cl/classes/http:{s}{s}purl.obolibrary.org{s}obo{s}",
-        "CellTaxonomy": f"www.ebi.ac.uk/ols4/ontologies/cl/classes/http:{s}{s}purl.obolibrary.org{s}obo{s}",
+        "CellMarker2": f"www.ebi.ac.uk/ols4/ontologies/cl/classes/http:{s}{s}purl.obolibrary.org{s}obo{s}",  # CellTaxonomy uses the same header
         "MeSH": "meshb.nlm.nih.gov/record/ui?ui=",
         "HGNC": "www.genenames.org/data/genegroup/#!/group/",
         "GO_MF": "www.ebi.ac.uk/QuickGO/term/",
@@ -184,8 +179,7 @@ def inverse_translate_wrapper() -> dict[str, Callable]:
     return {  # Missing resources are translated with a generic function in _get_resource_inverse_translation()
         "GO_BP": _get_go_inverse_translation,
         "GO_CC": _get_go_inverse_translation,
-        "CellMarker2": _get_ctyp_inverse_translation,
-        "CellTaxonomy": _get_ctyp_inverse_translation,
+        "CellMarker2": _get_ctyp_inverse_translation,  # CellTaxonomy uses the same function
         "HGNC": _get_geng_inverse_translation,
         "GO_MF": _get_go_inverse_translation,
     }
@@ -203,8 +197,7 @@ def load_wrapper() -> dict[str, Callable]:
     return {  # GO resources are included to generate a valid error message.
         "GO_BP": _load_gene_ontology,
         "GO_CC": _load_gene_ontology,
-        "CellMarker2": _load_cellmarker2_cell_types,
-        "CellTaxonomy": _load_celltaxonomy_cell_types,
+        "CellMarker2": _load_cell_types,  # CellTaxonomy uses the same function
         "MeSH": _load_diseases,
         "HGNC": _load_gene_groups,
         "GO_MF": _load_gene_ontology,
@@ -255,8 +248,7 @@ def roots_wrapper() -> dict[str, Callable]:
     return {
         "GO_BP": _get_biop_roots,
         "GO_CC": _get_celc_roots,
-        "CellMarker2": _get_ctyp_roots,
-        "CellTaxonomy": _get_ctyp_roots,
+        "CellMarker2": _get_ctyp_roots,  # CellTaxonomy uses the same function
         "GO_MF": _get_molf_roots,
     }
 
@@ -292,8 +284,7 @@ def terms_wrapper() -> dict[str, Callable]:
     return {
         "GO_BP": _get_biop_terms,
         "GO_CC": _get_celc_terms,
-        "CellMarker2": _get_ctyp_terms,
-        "CellTaxonomy": _get_ctyp_terms,
+        "CellMarker2": _get_ctyp_terms,  # CellTaxonomy uses the same function
         "HGNC": _get_geng_terms,
         "GO_MF": _get_molf_terms,
     }
@@ -312,8 +303,7 @@ def translate_wrapper() -> dict[str, Callable]:
     return {  # Missing resources are translated with a generic function in _get_resource_translation()
         "GO_BP": _get_go_translation,
         "GO_CC": _get_go_translation,
-        "CellMarker2": _get_ctyp_translation,
-        "CellTaxonomy": _get_ctyp_translation,
+        "CellMarker2": _get_ctyp_translation,  # CellTaxonomy uses the same function
         "HGNC": _get_geng_translation,
         "GO_MF": _get_go_translation,
     }
@@ -331,7 +321,6 @@ def urls_wrapper() -> dict[str, Callable]:
         A dict associating resources (keys) to their url functions (values).
     """
     return {  # Missing resources' urls are generated with a generic function in _get_resource_url()
-        "CellMarker2": _get_ctyp_url,
-        "CellTaxonomy": _get_ctyp_url,
+        "CellMarker2": _get_ctyp_url,  # CellTaxonomy uses the same function
         "HGNC": _get_geng_url,
     }

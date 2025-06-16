@@ -9,7 +9,7 @@ from gori.src.utils import _get_resource_ancestors
 def _get_ctyp_annotations(
     uid: str, resource: str, data: dict[str, Any], params: dict[str, Any]
 ) -> set[str]:
-    """Get the explicit and implicit CellMarker2 annotations of a gene.
+    """Get the explicit and implicit CellMarker2 or CellTaxonomy annotations of a gene.
 
     ``uid`` is a UniProtID.
     ``resource`` is a resource label.
@@ -17,7 +17,7 @@ def _get_ctyp_annotations(
     ``params`` is a dict of parameters.
 
     Returns
-        A set of CellMarker2 ids.
+        A set of Cell Ontology ids.
     """
     exp_annotations = data[resource]["annotations"].get((uid), set())
     imp_annotations = _get_resource_ancestors(exp_annotations, resource, data, params)

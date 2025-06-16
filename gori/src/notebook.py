@@ -132,7 +132,7 @@ def _get_notebook_template() -> str:
     "The barplot below report the number of association identified with each resource during the GORi analysis. These associations are progressively filtered out during the analysis, and can be split in four types:\n",
     "\n",
     "- **target associations** are associations between two resources; namely, a geneset you are trying to annotate, and an annotation term from a specific knowledge base.\n",
-    "- **strong associations** are **target associations** with strong lift values (or weak p-values); they are likely real associations according to statistics.\n",
+    "- **strong associations** are **target associations** with a high lift value (according to a heuristic analysis); they are likely to be statistically significant.\n",
     "- **unique associations** are **strong associations** after filtering out the redundant annotation terms; *e.g* `cell` is redundant with `basal cell`.\n",
     "- **corrected associations** are **unique associations** with a significant p-value after applying the Benjamini-Hochberg correction on unique associations; only corrected associations are returned by GORi.\n",
     "\n",
